@@ -1,6 +1,7 @@
 # DDD Tactical Patterns
 
 > Sources:
+>
 > - [Domain-Driven Design: The Blue Book](https://www.domainlanguage.com/ddd/blue-book/) — Eric Evans (2003)
 > - [Implementing Domain-Driven Design](https://openlibrary.org/works/OL17392277W) — Vaughn Vernon (2013)
 > - [Effective Aggregate Design](https://www.dddcommunity.org/library/vernon_2011/) — Vaughn Vernon
@@ -167,6 +168,7 @@ A cluster of entities and value objects treated as a single unit for data change
 | Concurrent modification conflicts | Rare | Occasional | Frequent: Split |
 
 **Questions to ask:**
+
 - Can parts be eventually consistent? → Separate aggregates
 - Do all parts change together? → Same aggregate
 - Are there independent lifecycles? → Separate aggregates

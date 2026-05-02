@@ -10,7 +10,7 @@ A Bun monorepo of autonomous agents built on the [Flue framework](https://fluefr
 
 ## Monorepo Layout
 
-```
+```text
 doc-agent/
 ├── package.json              # Bun workspace root — workspaces: ["agents/*"]
 ├── CLAUDE.md
@@ -140,6 +140,7 @@ Placed at the workspace root and/or inside each agent package. Automatically inj
 **Payload:** `{ repoPath: string, glob?: string }`  
 **Sandbox:** `'local'` (needs host git + filesystem)  
 **Result schema:**
+
 ```ts
 v.object({
   files: v.array(v.object({
@@ -153,6 +154,7 @@ v.object({
 ```
 
 **Staleness logic (executed via built-in `bash`/`glob`/`grep` tools):**
+
 1. `glob` to find all `*.md` files under `repoPath`
 2. `git log -1 --format="%ai" -- <file>` for each doc's last-modified commit date
 3. `grep` code file references (links, code fences with paths) inside each doc

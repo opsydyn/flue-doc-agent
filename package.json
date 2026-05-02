@@ -7,6 +7,8 @@
 		"check": "biome check --write .",
 		"lint": "biome lint .",
 		"format": "biome format --write .",
+		"lint:md": "markdownlint-cli2",
+		"fix:md": "markdownlint-cli2 --fix",
 		"knip": "knip",
 		"typecheck": "tsgo --noEmit"
 	},
@@ -18,8 +20,9 @@
 		"@catenarycloud/linteffect": "0.0.4-1",
 		"@effect/language-service": "^0.85.1",
 		"@types/bun": "latest",
-		"bun-types": "latest",
 		"@typescript/native-preview": "latest",
-		"knip": "^6.9.0"
+		"bun-types": "latest",
+		"knip": "^6.9.0",
+		"markdownlint-cli2": "^0.22.1"
 	}
 }

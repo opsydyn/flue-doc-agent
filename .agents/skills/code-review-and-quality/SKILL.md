@@ -198,6 +198,7 @@ Human makes the final call
 This catches issues that a single model might miss — different models have different blind spots.
 
 **Example prompt for a review agent:**
+
 ```
 Review this code change for correctness, security, and adherence to
 our project conventions. The spec says [X]. The change should [Y].
@@ -257,6 +258,7 @@ When reviewing code — whether written by you, another agent, or a human:
 Part of code review is dependency review:
 
 **Before adding any dependency:**
+
 1. Does the existing stack solve this? (Often it does.)
 2. How large is the dependency? (Check bundle impact.)
 3. Is it actively maintained? (Check last commit, open issues.)
@@ -310,6 +312,7 @@ Part of code review is dependency review:
 - [ ] **Approve** — Ready to merge
 - [ ] **Request changes** — Issues must be addressed
 ```
+
 ## See Also
 
 - For detailed security review guidance, see `references/security-checklist.md`

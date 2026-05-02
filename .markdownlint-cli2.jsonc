@@ -1,0 +1,28 @@
+{
+	// Shared config for both markdownlint-cli2 (CLI) and the VSCode markdownlint extension.
+	// Rules reference: https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+	"globs": [
+		"**/*.md",
+		"**/*.mdx",
+		"!flue-main/**",
+		"!.agents/skills/**",
+		"!.claude/skills/**",
+		"!.windsurf/skills/**",
+		"!**/node_modules/**",
+		"!**/dist/**",
+		"!**/.astro/**"
+	],
+	"config": {
+		// Line length — Biome enforces 100-char width for code; prose wraps naturally.
+		"MD013": false,
+		// Inline HTML — needed for MDX components in Starlight pages.
+		"MD033": false,
+		// First-line heading — frontmatter counts as "before" the heading; keep off.
+		"MD041": false,
+		// Ordered list numbering — allow 1. 1. 1. style for easy reordering.
+		"MD029": { "style": "ordered" },
+		// Duplicate headings — only flag true siblings; repeated section names across
+		// different parent headings (e.g. "What happened" / "Fix" in postmortems) are fine.
+		"MD024": { "siblings_only": true }
+	}
+}

@@ -1,6 +1,7 @@
 # DDD Strategic Patterns
 
 > Sources:
+>
 > - [Domain-Driven Design: The Blue Book](https://www.domainlanguage.com/ddd/blue-book/) — Eric Evans (2003)
 > - [DDD Resources](https://www.domainlanguage.com/ddd/) — Domain Language (Eric Evans)
 > - [Bounded Context](https://martinfowler.com/bliki/BoundedContext.html) — Martin Fowler
@@ -31,6 +32,7 @@ Purple sticky: Problem / Question
 ```
 
 **Workshop flow:**
+
 1. **Chaotic exploration** — Everyone adds events they know about
 2. **Timeline ordering** — Arrange events chronologically
 3. **Identify aggregates** — Group related events
@@ -40,6 +42,7 @@ Purple sticky: Problem / Question
 ### Context Mapping Workshop
 
 For existing systems, map how bounded contexts currently interact:
+
 1. List all systems/services
 2. Identify which team owns each
 3. Draw relationships (upstream/downstream)
@@ -51,6 +54,7 @@ For existing systems, map how bounded contexts currently interact:
 ## Ubiquitous Language
 
 The foundation of DDD. A shared vocabulary between developers and domain experts that appears in:
+
 - Code (class names, method names)
 - Documentation
 - Conversations
@@ -135,6 +139,7 @@ flowchart TB
 ```
 
 **"Customer" means different things:**
+
 - **Sales**: Email, preferences, order history
 - **Shipping**: Delivery address, phone number
 - **Billing**: Payment methods, billing address
@@ -231,6 +236,7 @@ Describes relationships between bounded contexts.
 ### Relationship Patterns
 
 #### Partnership
+
 Two contexts succeed or fail together. Teams coordinate closely.
 
 ```mermaid
@@ -242,6 +248,7 @@ flowchart LR
 ```
 
 #### Shared Kernel
+
 Two contexts share a subset of the domain model.
 
 ```mermaid
@@ -263,6 +270,7 @@ flowchart LR
 **Warning:** Shared kernels create coupling. Use sparingly.
 
 #### Customer-Supplier
+
 Upstream context provides what downstream needs.
 
 ```mermaid
@@ -274,6 +282,7 @@ flowchart LR
 ```
 
 #### Conformist
+
 Downstream conforms to upstream's model with no negotiation power.
 
 ```mermaid
@@ -287,6 +296,7 @@ flowchart LR
 **Example:** Integrating with a third-party API (Stripe, AWS).
 
 #### Anti-Corruption Layer (ACL)
+
 Translation layer protecting your model from external models.
 
 ```mermaid
@@ -303,6 +313,7 @@ flowchart LR
 ```
 
 **Use when:**
+
 - Integrating with legacy systems
 - Integrating with third-party APIs
 - External model is messy or poorly designed
@@ -363,6 +374,7 @@ export class StripePaymentACL {
 ```
 
 #### Open Host Service / Published Language
+
 Expose a well-defined protocol for integration.
 
 ```mermaid

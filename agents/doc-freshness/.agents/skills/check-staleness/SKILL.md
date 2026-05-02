@@ -15,9 +15,11 @@ Use `glob` to find all files matching `{{glob}}` under `{{repoPath}}`. Ignore fi
 For each file found:
 
 1. **Get the doc's last commit date:**
-   ```
+
+   ```bash
    git -C {{repoPath}} log -1 --format="%ai" -- <relative-path>
    ```
+
    If the file has no commits (untracked), skip it.
 
 2. **Extract code references** using `grep` — look for:
@@ -26,9 +28,11 @@ For each file found:
    - Bare file paths on their own line matching `src/`, `lib/`, `packages/`
 
 3. **For each referenced code file**, get its last commit date:
-   ```
+
+   ```bash
    git -C {{repoPath}} log -1 --format="%ai" -- <code-file>
    ```
+
    If the code file's commit is **newer** than the doc's commit → issue: `"<code-file> updated after this doc (code: <date>, doc: <date>)"`
 
 4. **Check internal markdown links** — for each `[text](./relative.md)` link, verify the

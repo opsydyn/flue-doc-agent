@@ -1,6 +1,7 @@
 # Hexagonal Architecture (Ports & Adapters)
 
 > Sources:
+>
 > - [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/) — Alistair Cockburn (2005)
 > - [Hexagonal Architecture Explained](https://openlibrary.org/works/OL38388131W) — Alistair Cockburn & Juan Manuel Garrido de Paz (2024)
 > - [Interview with Alistair Cockburn](https://jmgarridopaz.github.io/content/interviewalistair.html) — Juan Manuel Garrido de Paz
@@ -314,10 +315,12 @@ class RabbitMQEventPublisher implements IEventPublisherPort:
 ### Alistair Cockburn's Recommended Pattern
 
 **Ports:** `For[Doing][Something]`
+
 - Driver: `ForPlacingOrders`, `ForConfiguringSettings`
 - Driven: `ForStoringUsers`, `ForNotifyingAlerts`
 
 **Adapters:** Reference the technology
+
 - `CliCommandForPlacingOrders`
 - `MysqlDatabaseForStoringUsers`
 - `SlackNotifierForAlerts`

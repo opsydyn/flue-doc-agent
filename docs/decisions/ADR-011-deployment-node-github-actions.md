@@ -42,7 +42,7 @@ The agent retains its webhook trigger. This has no negative effect on CLI invoca
 `flue run` ignores triggers entirely. The single agent file serves both modes:
 
 | Mode | Invocation |
-|---|---|
+| --- | --- |
 | Node server | HTTP `POST /agents/doc-freshness/:id` |
 | CLI / CI | `flue run doc-freshness --target node --id <id> --payload '{…}'` |
 
@@ -82,7 +82,7 @@ node dist/server.mjs              # PORT defaults to 3000
 Server endpoints (Hono under the hood):
 
 | Route | Purpose |
-|---|---|
+| --- | --- |
 | `GET /health` | Health check |
 | `GET /agents` | Agent manifest |
 | `POST /agents/doc-freshness/:id` | Invoke the agent |

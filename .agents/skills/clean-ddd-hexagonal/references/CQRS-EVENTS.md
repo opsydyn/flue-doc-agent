@@ -1,6 +1,7 @@
 # CQRS & Domain Events
 
 > Sources:
+>
 > - [CQRS](https://martinfowler.com/bliki/CQRS.html) — Martin Fowler
 > - [Event Sourcing](https://martinfowler.com/eaaDev/EventSourcing.html) — Martin Fowler
 > - [CQRS Pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/cqrs) — Microsoft Azure
@@ -183,6 +184,7 @@ Separate write and read databases (optional): write is normalized for transactio
 ## Domain Events
 
 Notifications that something happened in the domain. Used for:
+
 - Updating read models
 - Cross-aggregate communication
 - Integration with other bounded contexts
@@ -530,7 +532,7 @@ class OutboxProcessor:
 
 CQRS adds significant complexity. Most applications don't need it.
 
-### Use CQRS When:
+### Use CQRS When
 
 - Read and write workloads have **dramatically** different scaling requirements
 - Complex queries that genuinely don't map well to domain model
@@ -538,7 +540,7 @@ CQRS adds significant complexity. Most applications don't need it.
 - Event sourcing is used (CQRS pairs naturally with ES)
 - You've proven simpler approaches are insufficient
 
-### Skip CQRS When:
+### Skip CQRS When
 
 - Simple CRUD application (most applications)
 - Read/write patterns are similar
@@ -612,6 +614,7 @@ Saga: PlaceOrderSaga
 ```
 
 **Saga types:**
+
 - **Choreography:** Each service listens/publishes events (simpler, harder to trace)
 - **Orchestration:** Central coordinator manages steps (explicit, easier to debug)
 
@@ -634,6 +637,7 @@ class OrderConfirmedHandler:
 ```
 
 **Implementation options:**
+
 - Store processed message IDs in database
 - Use message broker's deduplication features
 - Design handlers to be naturally idempotent

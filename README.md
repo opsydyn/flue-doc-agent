@@ -18,7 +18,7 @@ The first agent — **doc-freshness** — checks markdown documentation for stal
 
 ## Monorepo layout
 
-```
+```text
 doc-agent/
 ├── agents/
 │   └── doc-freshness/          # Flue agent — staleness checker

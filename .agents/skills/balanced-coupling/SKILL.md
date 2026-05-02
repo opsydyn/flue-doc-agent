@@ -72,11 +72,13 @@ Integration requires components to exchange **knowledge** about each other. The 
 Rather than trying to "measure" knowledge quantitatively, the model **categorizes** types of knowledge. Each type involves significantly different amounts of shared knowledge. This is the **Integration Strength** model, which identifies four levels (from strongest/most knowledge to weakest/least):
 
 #### Intrusive Coupling (Strongest)
+
 Occurs when **private interfaces** or implementation details are used for integration — internal databases, private objects, undocumented APIs. We must assume **all knowledge** about a component's implementation is shared. Intrusive coupling is both **fragile** and **implicit** — the authors of the "intruded" component may not even know the integration exists.
 
 Corresponds to **content coupling** (pathological coupling) in the classic module coupling model.
 
 #### Functional Coupling
+
 Shifts focus from *how* a component is implemented to *what* it implements: its **functional requirements**. Occurs when multiple components share knowledge of their business requirements and must change together when those requirements evolve.
 
 An extreme case is **duplicated knowledge** — the same business rule implemented in both frontend and backend. If a specification change isn't reflected in both simultaneously, the system enters an inconsistent state.
@@ -86,6 +88,7 @@ Like intrusive coupling, functional coupling can be **implicit**: duplicated bus
 Corresponds to **common, external, and control coupling** in the classic module coupling model.
 
 #### Model Coupling
+
 Occurs when components share knowledge of a **business domain model**. If the model changes — due to new domain insights — all coupled components must change accordingly.
 
 Domain-driven design emphasizes working with multiple specialized models rather than one massive all-encompassing model. Model coupling arises when components share one of these models.
@@ -93,6 +96,7 @@ Domain-driven design emphasizes working with multiple specialized models rather 
 Corresponds to **stamp coupling** in the classic module coupling model.
 
 #### Contract Coupling (Weakest)
+
 The lowest level of shared knowledge. An integration contract **encapsulates** implementation details, functional requirements, and business models, making integration explicit and stable.
 
 Design patterns that introduce contracts include: Facade, Open-host service / Published language (DDD), Anti-corruption layer (DDD), Data transfer objects (DTOs).
@@ -111,6 +115,7 @@ The four levels of integration strength also reflect how **implicit or explicit*
 #### Degrees of Integration Strength
 
 Within each level, finer-grained comparisons are possible using the levels of **connascence**:
+
 - **Static connascence** levels (name, type, meaning, algorithm, position) can compare degrees of contract and model coupling.
 - **Dynamic connascence** levels (execution, timing, value, identity) can compare degrees of functional coupling.
 
@@ -230,6 +235,7 @@ BALANCE = (STRENGTH XOR DISTANCE) OR NOT VOLATILITY
 ```
 
 This means coupling is balanced when either:
+
 - Strength and distance counterbalance each other (XOR), **OR**
 - The component has low volatility (regardless of strength/distance relationship).
 
@@ -242,15 +248,18 @@ This means coupling is balanced when either:
 The balanced coupling model has deep connections to DDD. Many DDD patterns and practices directly relate to the dimensions of coupling:
 
 ### Strategic Design
+
 - **Bounded contexts** define physical boundaries (medium distance, shared lifecycle) for components that share a model of the business domain (model coupling).
 - **Bounded context integration patterns** (shared kernel, partnership, conformist, anti-corruption layer, open-host service, separate ways) determine the level of knowledge sharing. Ad-hoc patterns allow more knowledge exchange; formal patterns reduce it. This reflects both the integration strength and the organizational aspect of distance.
 - Some integration patterns (anti-corruption layer, open-host service) encapsulate internal models behind integration-specific contracts (contract coupling), used when high distance exists.
 
 ### Tactical Design
+
 - **Aggregate** and **value object** patterns co-locate (low distance) behaviors sharing transactional boundaries (high degree of functional coupling). This is balanced: high strength is offset by low distance.
 - Business logic implementation patterns (transaction script, active record, domain model, event-sourced domain model) are chosen based on domain complexity — which directly relates to volatility.
 
 ### Subdomains and Volatility
+
 - **Core subdomains** = highest volatility -> require the most careful coupling management
 - **Supporting subdomains** = low volatility -> DDD explicitly allows pragmatic shortcuts here ("Not all of a large system will be well-designed" — Eric Evans), because low volatility neutralizes unbalanced coupling
 - **Generic subdomains** = low *functional* volatility (the problem is solved), but *implementation* volatility varies. When the probability of switching providers or using multiple implementations is high (e.g., TTS engines, payment gateways, notification services), enforce strong integration contracts to encapsulate provider-specific knowledge. When switching cost is inherently high and unlikely (e.g., identity providers, core databases), pragmatic shortcuts are acceptable — but verify this assumption and brainstorm plausible change vectors before committing

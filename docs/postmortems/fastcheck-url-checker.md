@@ -23,7 +23,7 @@ into a `UrlCheckError` — a failure, not the expected `String(status)` success.
 
 ### Error chain
 
-```
+```text
 HttpClientRequest.head("") →
   UrlParams.makeUrl("") → TypeError: "" cannot be parsed as a URL →
   HttpClientError({ reason: InvalidUrlError }) →
@@ -69,7 +69,7 @@ The Web `Response` constructor enforces: status must be `101` or in the range `[
 Status `100` (Continue) is not a valid constructor argument, so it throws a `RangeError`
 synchronously inside `Effect.succeed(...)`, crashing the fiber.
 
-```
+```text
 new Response(null, { status: 100 }) →
   RangeError: The status provided (100) must be 101 or in the range of [200, 599]
 ```

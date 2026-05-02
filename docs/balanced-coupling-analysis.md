@@ -20,7 +20,7 @@ Level of abstraction: module level — within `agents/doc-freshness/`
 
 ## Component map
 
-```
+```text
                         ┌─────────────────────────┐
                         │    doc-freshness.ts      │  ← agent handler (core)
                         └────────┬────────┬────────┘
@@ -92,7 +92,7 @@ This is correct design: the complexity is real, it's just fully enclosed.
 
 `mock-layers.ts` is now the **sole import point** for `effect/unstable/http` in test code, mirroring the anti-corruption layer design of `UrlChecker.ts` in production code. When Effect's HTTP API changes, only two files need updating: `UrlChecker.ts` and `mock-layers.ts`.
 
-```
+```text
 UrlChecker.test.ts ──┐
                       ├── import mock-layers.ts only
 UrlChecker.property.ts ──┘

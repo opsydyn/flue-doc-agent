@@ -1,6 +1,7 @@
 # Layer Structure - Complete Reference
 
 > Sources:
+>
 > - [The Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) — Robert C. Martin
 > - [Designing a DDD-oriented Microservice](https://learn.microsoft.com/en-us/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/ddd-oriented-microservice) — Microsoft
 > - [Clean Architecture: Standing on the Shoulders of Giants](https://herbertograca.com/2017/09/28/clean-architecture-standing-on-the-shoulders-of-giants/) — Herberto Graça
@@ -473,6 +474,7 @@ export function configureContainer(): Container {
 The same layered structure applies to any language:
 
 ### Go
+
 ```
 internal/
 ├── domain/
@@ -482,6 +484,7 @@ internal/
 ```
 
 ### Rust
+
 ```
 src/
 ├── domain/
@@ -491,6 +494,7 @@ src/
 ```
 
 ### Python
+
 ```
 src/
 ├── domain/

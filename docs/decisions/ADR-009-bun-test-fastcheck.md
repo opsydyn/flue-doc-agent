@@ -1,13 +1,17 @@
 # ADR-009: Bun test runner + FastCheck property-based testing
 
 ## Status
+
 Accepted
 
 ## Date
+
 2026-05-02
 
 ## Context
+
 Tests are needed for Effect services (particularly `UrlChecker`) that involve:
+
 - Layer substitution (mock `HttpClient`)
 - Typed error assertions
 - Behavioral invariants across arbitrary inputs
@@ -15,6 +19,7 @@ Tests are needed for Effect services (particularly `UrlChecker`) that involve:
 We need a test runner compatible with Bun (the project runtime per ADR-001) and a property testing library that integrates with Effect.
 
 ## Decision
+
 - **Test runner**: `bun test` (built into Bun, zero configuration, TypeScript-native)
 - **Property testing**: `effect/testing/FastCheck` — Effect's re-export of `fast-check` (`fc.*`)
 - **File conventions**:
@@ -25,21 +30,25 @@ We need a test runner compatible with Bun (the project runtime per ADR-001) and 
 ## Alternatives Considered
 
 ### Vitest
+
 - Pros: Excellent `@effect/vitest` integration, `it.effect` sugar
 - Cons: Requires its own runtime (vite); adds build tooling Bun already replaces; `@effect/vitest` is not needed since we bridge to promises via `Effect.runPromise` in tests.
 - Rejected: Bun is already the runtime; `bun test` is sufficient without extra tooling.
 
 ### Jest
+
 - Pros: Industry standard
 - Cons: Slow, requires Babel/ts-jest for TypeScript; no native ESM support; Bun's `bun test` is a compatible drop-in.
 - Rejected: Superseded by `bun test` in a Bun project.
 
 ### fast-check directly (not via `effect/testing/FastCheck`)
+
 - Pros: Direct dependency
 - Cons: `effect/testing/FastCheck` is just a re-export; using it directly ties us to a specific `fast-check` version that may diverge from what Effect re-exports.
 - Rejected: Use the Effect-managed re-export to stay in sync.
 
 ## Consequences
+
 - Property tests revealed two real constraints during initial development (documented in `docs/postmortems/fastcheck-url-checker.md`):
   1. `HttpClient.make` validates URLs before invoking the mock — `fc.string()` is wrong for URL arbitraries; use `FastCheck.webUrl()`
   2. `new Response(null, { status: 100 })` throws — `Response` only accepts `101` or `200–599`

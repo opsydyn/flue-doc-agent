@@ -1,6 +1,7 @@
 # Testing Patterns
 
 > Sources:
+>
 > - [The Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) — Robert C. Martin
 > - [Hexagonal Architecture](https://alistair.cockburn.us/hexagonal-architecture/) — Alistair Cockburn
 > - [Unit Testing](https://martinfowler.com/bliki/UnitTest.html) — Martin Fowler
