@@ -2,6 +2,8 @@
 
 Astro Starlight documentation site for the doc-agent project, deployed to GitHub Pages.
 
+Live at <https://opsydyn.github.io/flue-doc-agent/>.
+
 This site is dogfooded — the `doc-freshness` agent runs against it on a weekly schedule
 to check whether the docs are staying in sync with the code they describe.
 
