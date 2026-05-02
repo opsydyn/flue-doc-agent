@@ -35,7 +35,7 @@ jobs:
           node-version: '22'
 
       - name: Install dependencies
-        run: bun install
+        run: bun install && echo "$GITHUB_WORKSPACE/node_modules/.bin" >> "$GITHUB_PATH"
 
       - name: Fetch analytics signals
         id: signals
