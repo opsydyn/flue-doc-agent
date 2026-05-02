@@ -1,49 +1,50 @@
-# Starlight Starter Kit: Basics
+# @doc-agent/docs
 
-[![Built with Starlight](https://astro.badg.es/v2/built-with-starlight/tiny.svg)](https://starlight.astro.build)
+Astro Starlight documentation site for the doc-agent project, deployed to GitHub Pages.
 
+This site is dogfooded — the `doc-freshness` agent runs against it on a weekly schedule
+to check whether the docs are staying in sync with the code they describe.
+
+## Commands
+
+Run from this directory (`packages/docs/`):
+
+| Command | Action |
+| --- | --- |
+| `bun run dev` | Start dev server at `localhost:4321` |
+| `bun run build` | Build static site to `./dist/` |
+| `bun run preview` | Preview production build locally |
+
+## Content
+
+Documentation lives in `src/content/docs/`. Starlight maps the file tree directly to
+URL paths:
+
+```text
+src/content/docs/
+├── index.mdx               → /
+├── decisions/              → /decisions/*   (Architecture Decision Records)
+└── guides/                 → /guides/*
 ```
-bun create astro@latest -- --template starlight
-```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+Add a new page by creating a `.md` or `.mdx` file in the appropriate directory.
+The sidebar entries for `decisions/` and `guides/` are auto-generated.
 
-## 🚀 Project Structure
+## Analytics
 
-Inside of your Astro + Starlight project, you'll see the following folders and files:
+Page views are tracked with [One Dollar Stats](https://onedollarstats.com/).
+The tracker script is wired in `astro.config.mjs` via the `head` option and reads
+`PUBLIC_ODS_SITE_ID` from the environment. Set it in `.env` locally or as a repository
+variable (`vars.PUBLIC_ODS_SITE_ID`) in GitHub Actions.
 
-```
-.
-├── public/
-├── src/
-│   ├── assets/
-│   ├── content/
-│   │   └── docs/
-│   └── content.config.ts
-├── astro.config.mjs
-├── package.json
-└── tsconfig.json
-```
+## Deployment
 
-Starlight looks for `.md` or `.mdx` files in the `src/content/docs/` directory. Each file is exposed as a route based on its file name.
+Pushes to `main` that touch `packages/docs/**` trigger
+[`.github/workflows/deploy-docs.yml`](../../.github/workflows/deploy-docs.yml),
+which builds the site with Bun and deploys to GitHub Pages via `actions/deploy-pages`.
 
-Images can be added to `src/assets/` and embedded in Markdown with a relative link.
+Before the first deploy:
 
-Static assets, like favicons, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `bun install`             | Installs dependencies                            |
-| `bun dev`             | Starts local dev server at `localhost:4321`      |
-| `bun build`           | Build your production site to `./dist/`          |
-| `bun preview`         | Preview your build locally, before deploying     |
-| `bun astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `bun astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Check out [Starlight’s docs](https://starlight.astro.build/), read [the Astro documentation](https://docs.astro.build), or jump into the [Astro Discord server](https://astro.build/chat).
+1. Enable GitHub Pages in repo Settings → Pages → Source: **GitHub Actions**
+2. Set `site` and `base` in `astro.config.mjs` once the Pages URL is known
+3. Add `PUBLIC_ODS_SITE_ID` as a repository variable and uncomment the tracker in `astro.config.mjs`
