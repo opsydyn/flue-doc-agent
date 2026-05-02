@@ -42,17 +42,15 @@ export default defineConfig({
 					autogenerate: { directory: 'guides' },
 				},
 			],
-			// One Dollar Stats analytics — add tracker once site ID is known.
-			// head: [
-			// 	{
-			// 		tag: 'script',
-			// 		attrs: {
-			// 			defer: true,
-			// 			src: 'https://cdn.onedollarstats.com/tracker.js',
-			// 			'data-site': import.meta.env.PUBLIC_ODS_SITE_ID,
-			// 		},
-			// 	},
-			// ],
+			head: [
+				{
+					tag: 'script',
+					attrs: {
+						defer: true,
+						src: 'https://assets.onedollarstats.com/stonks.js',
+					},
+				},
+			],
 		}),
 	],
 });
