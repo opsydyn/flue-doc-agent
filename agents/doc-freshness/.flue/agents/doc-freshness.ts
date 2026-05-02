@@ -1,6 +1,9 @@
 import { type FlueContext, type ToolDef, Type } from "@flue/sdk/client";
 import { Data, Effect, Match, Option, Schema, Struct } from "effect";
 import * as Record from "effect/Record";
+import type { Dirent } from "node:fs";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
 import * as v from "valibot";
 import { httpUrl } from "../../src/Domain";
 import { OdsClient, OdsClientDefault } from "../../src/OdsClient";
@@ -68,6 +71,79 @@ const makeSignals = (input: SignalsPayload): Signals =>
 const encodeNullableSignalMap = Schema.encodeSync(nullableSignalMapJsonSchema);
 const encodePageviewThreshold = Schema.encodeSync(Schema.NumberFromString);
 
+const globBaseDirectory = (repoPath: string, glob: string) => {
+	const globMetaIndex = glob.search(/[*?{[]/);
+	const staticPrefix = Match.value(globMetaIndex).pipe(
+		Match.when(
+			(index) => index >= 0,
+			(index) => glob.slice(0, index),
+		),
+		Match.orElse(() => glob),
+	);
+	const directory = Match.value(staticPrefix.endsWith(path.sep)).pipe(
+		Match.when(true, () => staticPrefix.slice(0, -1)),
+		Match.orElse(() => path.dirname(staticPrefix)),
+	);
+
+	return Match.value(path.isAbsolute(directory)).pipe(
+		Match.when(true, () => directory),
+		Match.orElse(() => path.resolve(repoPath, directory)),
+	);
+};
+
+const globExtensions = (glob: string) =>
+	Match.value(glob).pipe(
+		Match.when(
+			(input) => input.includes("{md,mdx}") || input.includes("{mdx,md}"),
+			() => [".md", ".mdx"] as const,
+		),
+		Match.when(
+			(input) => input.endsWith(".mdx"),
+			() => [".mdx"] as const,
+		),
+		Match.orElse(() => [".md"] as const),
+	);
+
+const matchedFileList = (fullPath: string, isMatch: boolean) =>
+	Match.value(isMatch).pipe(
+		Match.when(true, () => [fullPath]),
+		Match.orElse(() => []),
+	);
+
+const listMarkdownEntry = (
+	directory: string,
+	extensions: ReadonlyArray<string>,
+	entry: Dirent<string>,
+) => {
+	const fullPath = path.join(directory, entry.name);
+
+	return Match.value(entry.isDirectory()).pipe(
+		Match.when(true, () => listMarkdownFiles(fullPath, extensions)),
+		Match.orElse(() =>
+			Promise.resolve(
+				matchedFileList(
+					fullPath,
+					extensions.some((extension) => entry.name.endsWith(extension)),
+				),
+			),
+		),
+	);
+};
+
+const listMarkdownFiles = async (
+	directory: string,
+	extensions: ReadonlyArray<string>,
+): Promise<ReadonlyArray<string>> =>
+	fs
+		.readdir(directory, { withFileTypes: true })
+		.then((entries) =>
+			Promise.all(
+				entries.map((entry) => listMarkdownEntry(directory, extensions, entry)),
+			),
+		)
+		.then((groups) => groups.flat())
+		.catch(() => []);
+
 // -----------------------------------------------------------------------------
 // Tools
 // -----------------------------------------------------------------------------
@@ -99,6 +175,40 @@ const checkUrlResultJsonSchema = Schema.fromJsonString(
 	Schema.Union([checkUrlReachableSchema, checkUrlInvalidSchema, checkUrlUnreachableSchema]),
 );
 const encodeCheckUrlResult = Schema.encodeSync(checkUrlResultJsonSchema);
+
+const listDocsArgsSchema = Schema.Struct({
+	repoPath: Schema.String,
+	glob: Schema.String,
+});
+const listDocsResultJsonSchema = Schema.fromJsonString(
+	Schema.Struct({
+		files: Schema.Array(Schema.String),
+	}),
+);
+const encodeListDocsResult = Schema.encodeSync(listDocsResultJsonSchema);
+
+const listDocs: ToolDef = {
+	name: "list-docs",
+	description:
+		"List markdown documentation files for a repository glob. Returns schema-encoded JSON with repo-relative file paths.",
+	parameters: Type.Object({
+		repoPath: Type.String({ description: "Absolute repository root path" }),
+		glob: Type.String({ description: "Markdown glob relative to repo root or absolute" }),
+	}),
+	execute: (args) =>
+		Effect.gen(function* () {
+			const { repoPath, glob } = yield* Schema.decodeUnknownEffect(listDocsArgsSchema)(args);
+			const root = globBaseDirectory(repoPath, glob);
+			const extensions = globExtensions(glob);
+			const files = yield* Effect.promise(() => listMarkdownFiles(root, extensions));
+
+			return listDocsResultJsonSchema.to.make({
+				files: files
+					.map((filePath) => path.relative(repoPath, filePath).replaceAll(path.sep, "/"))
+					.sort(),
+			});
+		}).pipe(Effect.map(encodeListDocsResult), Effect.runPromise),
+};
 
 const checkUrl: ToolDef = {
 	name: "check-url",
@@ -275,49 +385,19 @@ const makeAnalyticsResult = Effect.gen(function* () {
 const checkStalenessArgsSchema = Schema.Struct({
 	repoPath: Schema.String,
 	glob: Schema.String,
-	globPath: Schema.String,
-	globPattern: Schema.String,
 	pageviews: Schema.String,
 	repoTraffic: Schema.String,
 	pageviewThreshold: Schema.String,
 });
-
-const splitGlobForFlue = (glob: string) => {
-	const recursiveGlobIndex = glob.indexOf("/**/");
-	const lastSlashIndex = glob.lastIndexOf("/");
-
-	return Match.value({ recursiveGlobIndex, lastSlashIndex }).pipe(
-		Match.when(
-			(input) => input.recursiveGlobIndex >= 0,
-			(input) =>
-				({
-					globPath: glob.slice(0, input.recursiveGlobIndex),
-					globPattern: glob.slice(input.recursiveGlobIndex + "/**/".length),
-				}) as const,
-		),
-		Match.when(
-			(input) => input.lastSlashIndex >= 0,
-			(input) =>
-				({
-					globPath: glob.slice(0, input.lastSlashIndex),
-					globPattern: glob.slice(input.lastSlashIndex + 1),
-				}) as const,
-		),
-		Match.orElse(() => ({ globPath: ".", globPattern: glob }) as const),
-	);
-};
 
 const makeCheckStalenessArgs = (
 	repoPath: string,
 	glob: string,
 	signals: Option.Option<Signals>,
 ) => {
-	const { globPath, globPattern } = splitGlobForFlue(glob);
 	const defaultArgs = checkStalenessArgsSchema.make({
 		repoPath,
 		glob,
-		globPath,
-		globPattern,
 		pageviews: encodeNullableSignalMap(null),
 		repoTraffic: encodeNullableSignalMap(null),
 		pageviewThreshold: encodePageviewThreshold(defaultPageviewThreshold),
@@ -349,7 +429,7 @@ export default async function ({ init, payload }: FlueContext) {
 	const agent = await init({
 		sandbox: "local",
 		model: "openai/gpt-4o",
-		tools: [checkUrl, fetchAnalytics],
+		tools: [listDocs, checkUrl, fetchAnalytics],
 	});
 
 	const session = await agent.session();

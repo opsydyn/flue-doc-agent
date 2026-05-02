@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
-      contents: read
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -112,30 +112,23 @@ jobs:
           ODS_API_KEY: ${{ secrets.ONE_DOLLAR_STATS_API_KEY }}
           ODS_SITE_ID: ${{ secrets.ODS_SITE_ID }}
         run: |
-          extract_last_json() {
-            node -e 'const fs = require("fs"); const input = fs.readFileSync(0, "utf8"); let last; for (let start = input.indexOf("{"); start !== -1; start = input.indexOf("{", start + 1)) { let depth = 0; let inString = false; let escape = false; for (let end = start; end < input.length; end++) { const char = input[end]; if (inString) { if (escape) escape = false; else if (char === "\\") escape = true; else if (char === "\"") inString = false; continue; } if (char === "\"") inString = true; else if (char === "{") depth++; else if (char === "}") { depth--; if (depth === 0) { const candidate = input.slice(start, end + 1); try { last = JSON.parse(candidate); } catch {} break; } } } } if (!last) { console.error(input); process.exit(1); } process.stdout.write(JSON.stringify(last));'
-          }
-
-          set +e
-          RAW_OUTPUT=$(flue run doc-freshness --target node \
+          flue run doc-freshness --target node \
             --id "analytics-${{ github.run_id }}" \
-            --payload '{"mode":"analytics"}' 2>&1)
-          FLUE_EXIT=$?
-          set -e
-          printf '%s\n' "$RAW_OUTPUT"
-          if [ "$FLUE_EXIT" -ne 0 ]; then exit "$FLUE_EXIT"; fi
-          RESULT=$(printf '%s' "$RAW_OUTPUT" | extract_last_json)
-          jq -r '.report' <<< "$RESULT" >> "$GITHUB_STEP_SUMMARY"
+            --payload '{"mode":"analytics"}' \
+            > /tmp/analytics-output.txt \
+            2> /tmp/analytics.log
+          cat /tmp/analytics.log
+          cat /tmp/analytics-output.txt
+          node scripts/extract-flue-json.mjs \
+            --input /tmp/analytics-output.txt \
+            --output /tmp/analytics-result.json
+          jq -er '.report' /tmp/analytics-result.json >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run doc-freshness agent
         working-directory: agents/doc-freshness
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          extract_last_json() {
-            node -e 'const fs = require("fs"); const input = fs.readFileSync(0, "utf8"); let last; for (let start = input.indexOf("{"); start !== -1; start = input.indexOf("{", start + 1)) { let depth = 0; let inString = false; let escape = false; for (let end = start; end < input.length; end++) { const char = input[end]; if (inString) { if (escape) escape = false; else if (char === "\\") escape = true; else if (char === "\"") inString = false; continue; } if (char === "\"") inString = true; else if (char === "{") depth++; else if (char === "}") { depth--; if (depth === 0) { const candidate = input.slice(start, end + 1); try { last = JSON.parse(candidate); } catch {} break; } } } } if (!last) { console.error(input); process.exit(1); } process.stdout.write(JSON.stringify(last));'
-          }
-
           DOC_GLOB="${{ github.event.inputs.glob || 'packages/docs/src/content/docs/**/*.md' }}"
           case "$DOC_GLOB" in
             /*) SCAN_GLOB="$DOC_GLOB" ;;
@@ -147,13 +140,39 @@ jobs:
             --arg glob "$SCAN_GLOB" \
             --argjson signals '${{ steps.signals.outputs.signals }}' \
             '{repoPath:$repoPath,glob:$glob,signals:$signals}')
-          set +e
-          RAW_OUTPUT=$(flue run doc-freshness --target node \
-            --id "freshness-${{ github.run_id }}" --payload "$PAYLOAD" 2>&1)
-          FLUE_EXIT=$?
-          set -e
-          printf '%s\n' "$RAW_OUTPUT"
-          if [ "$FLUE_EXIT" -ne 0 ]; then exit "$FLUE_EXIT"; fi
-          RESULT=$(printf '%s' "$RAW_OUTPUT" | extract_last_json)
-          jq -r '.report' <<< "$RESULT" >> "$GITHUB_STEP_SUMMARY"
-          jq -e '.shouldFail | not' <<< "$RESULT" > /dev/null
+          flue run doc-freshness --target node \
+            --id "freshness-${{ github.run_id }}" --payload "$PAYLOAD" \
+            > /tmp/freshness-output.txt \
+            2> /tmp/freshness.log
+          cat /tmp/freshness.log
+          cat /tmp/freshness-output.txt
+          node scripts/extract-flue-json.mjs \
+            --input /tmp/freshness-output.txt \
+            --output /tmp/freshness-result.json
+          jq -er '.report' /tmp/freshness-result.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Generate Starlight freshness pages
+        run: |
+          node agents/doc-freshness/scripts/write-starlight-reports.mjs \
+            --ods /tmp/ods-pageviews.json \
+            --freshness /tmp/freshness-result.json \
+            --out packages/docs/src/content/docs/analytics
+
+      - name: Build docs with generated reports
+        working-directory: packages/docs
+        env:
+          PUBLIC_ODS_SITE_ID: ${{ secrets.ODS_SITE_ID }}
+        run: bun run build
+
+      - name: Commit generated freshness reports
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add packages/docs/src/content/docs/analytics
+          if ! git diff --cached --quiet; then
+            git commit -m "Update generated doc freshness reports"
+            git push
+          fi
+
+      - name: Apply freshness gate
+        run: jq -e '.shouldFail | not' /tmp/freshness-result.json > /dev/null

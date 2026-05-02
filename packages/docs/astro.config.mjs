@@ -59,6 +59,10 @@ export default defineConfig({
 					autogenerate: { directory: 'analysis' },
 				},
 				{
+					label: 'Freshness',
+					autogenerate: { directory: 'analytics' },
+				},
+				{
 					label: 'Postmortems',
 					autogenerate: { directory: 'postmortems' },
 				},

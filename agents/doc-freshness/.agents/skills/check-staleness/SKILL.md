@@ -7,12 +7,12 @@ Perform a full documentation freshness audit for the repository at `{{repoPath}}
 
 ## Step 1 — Find all markdown files
 
-Use `glob` with `path: "{{globPath}}"` and `pattern: "{{globPattern}}"`. The original glob is
-`{{glob}}`, but Flue's `glob` tool expects a search directory plus a basename pattern, not a
-single path-containing pattern. Ignore any paths containing `node_modules/`, `dist/`, or `.git/`.
+Call `list-docs` with `repoPath: "{{repoPath}}"` and `glob: "{{glob}}"`. Parse the returned
+JSON and use its `files` array as the complete list of docs to audit. Ignore any paths containing
+`node_modules/`, `dist/`, or `.git/`.
 
-When reporting files or passing file paths to `git -C {{repoPath}}`, convert absolute matches
-back to paths relative to `{{repoPath}}`.
+The `files` array contains paths relative to `{{repoPath}}`; use those paths when reporting files
+or passing file paths to `git -C {{repoPath}}`.
 
 ## Step 2 — For each markdown file
 
