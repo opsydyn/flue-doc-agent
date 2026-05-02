@@ -19,6 +19,7 @@
 		"@biomejs/biome": "^2.0.0",
 		"@catenarycloud/linteffect": "0.0.4-1",
 		"@effect/language-service": "^0.85.1",
+		"@flue/cli": "^0.3.6",
 		"@types/bun": "latest",
 		"@typescript/native-preview": "latest",
 		"bun-types": "latest",

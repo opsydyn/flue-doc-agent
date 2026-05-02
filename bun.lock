@@ -11,6 +11,7 @@
         "@biomejs/biome": "^2.0.0",
         "@catenarycloud/linteffect": "0.0.4-1",
         "@effect/language-service": "^0.85.1",
+        "@flue/cli": "^0.3.6",
         "@types/bun": "latest",
         "@typescript/native-preview": "latest",
         "bun-types": "latest",
@@ -244,6 +245,8 @@
     "@expressive-code/plugin-shiki": ["@expressive-code/plugin-shiki@0.41.7", "", { "dependencies": { "@expressive-code/core": "^0.41.7", "shiki": "^3.2.2" } }, "sha512-DL605bLrUOgqTdZ0Ot5MlTaWzppRkzzqzeGEu7ODnHF39IkEBbFdsC7pbl3LbUQ1DFtnfx6rD54k/cdofbW6KQ=="],
 
     "@expressive-code/plugin-text-markers": ["@expressive-code/plugin-text-markers@0.41.7", "", { "dependencies": { "@expressive-code/core": "^0.41.7" } }, "sha512-Ewpwuc5t6eFdZmWlFyeuy3e1PTQC0jFvw2Q+2bpcWXbOZhPLsT7+h8lsSIJxb5mS7wZko7cKyQ2RLYDyK6Fpmw=="],
+
+    "@flue/cli": ["@flue/cli@0.3.6", "", { "dependencies": { "@flue/sdk": "0.3.6" }, "bin": { "flue": "dist/flue.js" } }, "sha512-plqp/NfTZVca3FAt+n670rCkfFzRnHCPaH2Zo/VJxuxw6kh48fvHJuvNO4oUPTbx4bX+FVxJKbI+RsMwdHbGrQ=="],
 
     "@flue/sdk": ["@flue/sdk@0.3.6", "", { "dependencies": { "@cloudflare/shell": "^0.3.2", "@hono/node-server": "^1.14.0", "@mariozechner/pi-agent-core": "*", "@mariozechner/pi-ai": "*", "@modelcontextprotocol/sdk": "^1.29.0", "@valibot/to-json-schema": "^1.0.0", "esbuild": "^0.25.0", "hono": "^4.7.0", "just-bash": "^2.14.2", "package-up": "^5.0.0", "valibot": "^1.0.0" }, "peerDependencies": { "wrangler": "^4.0.0" }, "optionalPeers": ["wrangler"] }, "sha512-n4X85G+D+PoaaATG05JuBn3pArTuLdZS7QgkOAdEi+/8SxXB2Kle11TM0DWcM1fK7RVeDMTkUCZSlgFo1Y0qYA=="],
 

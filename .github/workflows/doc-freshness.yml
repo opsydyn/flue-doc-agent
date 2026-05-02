@@ -1,0 +1,80 @@
+name: Doc Freshness
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Every Monday at 09:00 UTC
+  workflow_dispatch:
+    inputs:
+      glob:
+        description: 'Glob pattern for docs to scan (relative to repo root)'
+        required: false
+        default: 'packages/docs/src/content/docs/**/*.md'
+
+jobs:
+  check-freshness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history required for git log staleness checks
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-node@v4  # must come after setup-bun to win PATH race
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run doc-freshness agent
+        working-directory: agents/doc-freshness
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          GLOB="${{ github.event.inputs.glob || 'packages/docs/src/content/docs/**/*.md' }}"
+          RESULT=$(flue run doc-freshness --target node \
+            --id "freshness-${{ github.run_id }}" \
+            --payload "{\"repoPath\": \"$GITHUB_WORKSPACE\", \"glob\": \"$GLOB\"}")
+          echo "$RESULT"
+
+          # Write job summary
+          TOTAL=$(echo "$RESULT" | jq -r '.summary.total // 0')
+          FRESH=$(echo "$RESULT" | jq -r '.summary.fresh // 0')
+          STALE=$(echo "$RESULT" | jq -r '.summary.stale // 0')
+          WARN=$(echo "$RESULT"  | jq -r '.summary.warnings // 0')
+
+          {
+            echo "## Doc Freshness Report"
+            echo ""
+            echo "| Status | Count |"
+            echo "| --- | --- |"
+            echo "| Total | $TOTAL |"
+            echo "| Fresh | $FRESH |"
+            echo "| Stale | $STALE |"
+            echo "| Warnings | $WARN |"
+            echo ""
+            if [ "$STALE" -gt 0 ]; then
+              echo "### Stale docs"
+              echo ""
+              echo "$RESULT" | jq -r '.files[] | select(.status == "stale") | "- **\(.path)** — \(.issues | join("; "))"'
+            fi
+            if [ "$WARN" -gt 0 ]; then
+              echo ""
+              echo "### Warnings"
+              echo ""
+              echo "$RESULT" | jq -r '.files[] | select(.status == "warning") | "- **\(.path)** — \(.issues | join("; "))"'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # Fail the job if stale docs were found
+          if [ "$STALE" -gt 0 ]; then
+            echo "::error::$STALE stale doc(s) found — see job summary for details"
+            exit 1
+          fi
