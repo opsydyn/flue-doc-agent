@@ -1,3 +1,7 @@
+---
+title: "ADR-011: Dual-mode deployment — Node.js server and GitHub Actions"
+---
+
 # ADR-011: Dual-mode deployment — Node.js server and GitHub Actions
 
 ## Status

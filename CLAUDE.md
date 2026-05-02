@@ -12,7 +12,7 @@ A Bun monorepo of autonomous agents built on the [Flue framework](https://fluefr
 
 ```text
 doc-agent/
-├── package.json              # Bun workspace root — workspaces: ["agents/*"]
+├── package.json              # Bun workspace root — workspaces: ["agents/*", "packages/*"]
 ├── CLAUDE.md
 ├── agents/
 │   └── doc-freshness/        # First agent package
@@ -26,6 +26,13 @@ doc-agent/
 │       └── .agents/
 │           └── skills/
 │               └── <skill-name>/SKILL.md
+├── packages/
+│   └── docs/                 # Astro Starlight site (source of truth for all docs)
+│       └── src/content/docs/
+│           ├── decisions/    # ADR-001 through ADR-012
+│           ├── analysis/     # Balanced coupling analysis
+│           ├── postmortems/  # FastCheck and other incident docs
+│           └── diataxis/     # Diátaxis framework documentation
 └── flue-main/                # Flue SDK source (pnpm workspace, separate)
 ```
 

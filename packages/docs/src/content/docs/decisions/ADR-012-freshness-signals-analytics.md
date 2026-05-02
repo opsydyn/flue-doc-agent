@@ -1,3 +1,7 @@
+---
+title: "ADR-012: Freshness signals — GitHub Traffic API + One Dollar Stats"
+---
+
 # ADR-012: Freshness signals — GitHub Traffic API + One Dollar Stats
 
 ## Status

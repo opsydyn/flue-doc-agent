@@ -1,3 +1,7 @@
+---
+title: "ADR-008: OpenAI gpt-4o as the agent model"
+---
+
 # ADR-008: OpenAI gpt-4o as the agent model
 
 ## Status

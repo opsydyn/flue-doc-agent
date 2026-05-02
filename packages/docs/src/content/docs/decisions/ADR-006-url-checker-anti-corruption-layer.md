@@ -1,3 +1,7 @@
+---
+title: "ADR-006: UrlChecker as anti-corruption layer for effect/unstable/http"
+---
+
 # ADR-006: UrlChecker as anti-corruption layer for effect/unstable/http
 
 ## Status

@@ -50,8 +50,12 @@ export default defineConfig({
 					autogenerate: { directory: 'decisions' },
 				},
 				{
-					label: 'Guides',
-					autogenerate: { directory: 'guides' },
+					label: 'Analysis',
+					autogenerate: { directory: 'analysis' },
+				},
+				{
+					label: 'Postmortems',
+					autogenerate: { directory: 'postmortems' },
 				},
 			],
 			head: [

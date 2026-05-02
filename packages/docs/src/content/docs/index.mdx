@@ -1,40 +1,63 @@
 ---
-title: Welcome to Starlight
-description: Get started building your docs site with Starlight.
-template: splash # Remove or comment out this line to display the site sidebar on this page.
+title: doc-agent
+description: Autonomous documentation freshness agents built on Flue + Effect.
+template: splash
 hero:
-  tagline: Congrats on setting up a new Starlight project!
-  image:
-    file: ../../assets/houston.webp
+  title: doc-agent
+  tagline: Autonomous agents that keep documentation honest — powered by Flue, Effect, and OpenAI.
   actions:
-    - text: Example Guide
-      link: /guides/example/
+    - text: Architecture decisions
+      link: /flue-doc-agent/decisions/adr-001-bun-monorepo/
       icon: right-arrow
-    - text: Read the Starlight docs
-      link: https://starlight.astro.build
+    - text: View on GitHub
+      link: https://github.com/opsydyn/flue-doc-agent
       icon: external
       variant: minimal
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components';
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-## Next steps
+## What is doc-agent?
 
-<CardGrid stagger>
- <Card title="Update content" icon="pencil">
-  Edit `src/content/docs/index.mdx` to see this page change.
- </Card>
- <Card title="Change page layout" icon="document">
-  Delete `template: splash` in `src/content/docs/index.mdx` to display a
-  sidebar on this page.
- </Card>
- <Card title="Add new content" icon="add-document">
-  Add Markdown or MDX files to `src/content/docs` to create new pages.
- </Card>
- <Card title="Configure your site" icon="setting">
-  Edit your `sidebar` and other config in `astro.config.mjs`.
- </Card>
- <Card title="Read the docs" icon="open-book">
-  Learn more in [the Starlight Docs](https://starlight.astro.build/).
- </Card>
+A Bun monorepo of autonomous agents built on the [Flue framework](https://flueframework.com/)
+using [Effect](https://effect.website/) as the core language.
+
+The first agent — **doc-freshness** — detects stale markdown documentation by comparing
+git history against the source files each doc references. It scores results by
+page-view demand using [One Dollar Stats](https://onedollarstats.com/) analytics, then
+writes freshness metadata back to each file's frontmatter.
+
+<CardGrid>
+  <LinkCard
+    title="Architecture Decisions"
+    description="12 ADRs covering every major design choice — from Bun monorepo to Effect layers to OpenAI model selection."
+    href="/flue-doc-agent/decisions/adr-001-bun-monorepo/"
+  />
+  <LinkCard
+    title="Applying Diátaxis"
+    description="How we structure documentation using the Diátaxis framework — tutorials, how-to guides, reference, explanation."
+    href="/flue-doc-agent/diataxis/"
+  />
+  <LinkCard
+    title="Balanced Coupling Analysis"
+    description="Module-level coupling assessment using Vlad Khononov's balanced coupling model."
+    href="/flue-doc-agent/analysis/balanced-coupling/"
+  />
+  <LinkCard
+    title="Postmortems"
+    description="FastCheck property-based testing findings — what broke, why, and what we learned."
+    href="/flue-doc-agent/postmortems/fastcheck-url-checker/"
+  />
 </CardGrid>
+
+## Tech stack
+
+| Concern | Tool |
+| --- | --- |
+| Agent framework | [Flue](https://flueframework.com/) |
+| Core language | [Effect](https://effect.website/) (beta) |
+| Runtime | [Bun](https://bun.sh/) |
+| Model | OpenAI `gpt-4o` |
+| Lint + format | [Biome](https://biomejs.dev/) v2 + linteffect |
+| Tests | `bun test` + `effect/testing/FastCheck` |
+| Page analytics | [One Dollar Stats](https://onedollarstats.com/) |

@@ -1,3 +1,7 @@
+---
+title: "ADR-003: Effect (beta) as core language over raw async/await"
+---
+
 # ADR-003: Effect (beta) as core language over raw async/await
 
 ## Status

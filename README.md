@@ -26,11 +26,12 @@ doc-agent/
 │       ├── src/                # Effect services (UrlChecker, …)
 │       └── src/__tests__/      # bun test + FastCheck property tests
 ├── packages/
-│   └── docs/                   # Astro Starlight site
-├── docs/
-│   ├── decisions/              # Architecture Decision Records (ADR-001 – ADR-012)
-│   ├── balanced-coupling-analysis.md
-│   └── postmortems/
+│   └── docs/                   # Astro Starlight site (source of truth for all docs)
+│       └── src/content/docs/
+│           ├── decisions/      # ADR-001 through ADR-012
+│           ├── analysis/       # Balanced coupling analysis
+│           ├── postmortems/    # Incident post-mortems
+│           └── diataxis/       # Diátaxis documentation framework
 ├── .agents/skills/             # Shared agent skills (balanced-coupling, tdd, …)
 └── flue-main/                  # Flue SDK source (excluded from Bun workspace)
 ```

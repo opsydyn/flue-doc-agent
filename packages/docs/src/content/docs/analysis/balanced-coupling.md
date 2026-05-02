@@ -1,3 +1,7 @@
+---
+title: "Balanced Coupling Analysis — doc-freshness agent"
+---
+
 # Balanced Coupling Analysis — doc-freshness agent
 
 Framework: [Balanced Coupling model](https://skills.sh/vladikk/modularity/balanced-coupling) (Vlad Khononov)  

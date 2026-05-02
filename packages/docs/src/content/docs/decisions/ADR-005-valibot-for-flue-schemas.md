@@ -1,3 +1,7 @@
+---
+title: "ADR-005: Valibot for Flue result schemas, Effect Schema for domain validation"
+---
+
 # ADR-005: Valibot for Flue result schemas, Effect Schema for domain validation
 
 ## Status

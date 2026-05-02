@@ -1,3 +1,7 @@
+---
+title: "ADR-004: effect/unstable/http over raw fetch for HTTP requests"
+---
+
 # ADR-004: effect/unstable/http over raw fetch for HTTP requests
 
 ## Status

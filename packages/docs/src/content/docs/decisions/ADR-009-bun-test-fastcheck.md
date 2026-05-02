@@ -1,3 +1,7 @@
+---
+title: "ADR-009: Bun test runner + FastCheck property-based testing"
+---
+
 # ADR-009: Bun test runner + FastCheck property-based testing
 
 ## Status

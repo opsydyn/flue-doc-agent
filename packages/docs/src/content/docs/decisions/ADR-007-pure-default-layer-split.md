@@ -1,3 +1,7 @@
+---
+title: "ADR-007: Pure/Default layer split for Effect service testability"
+---
+
 # ADR-007: Pure/Default layer split for Effect service testability
 
 ## Status

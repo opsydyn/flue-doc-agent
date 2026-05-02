@@ -1,3 +1,7 @@
+---
+title: "ADR-002: Flue framework for agent orchestration"
+---
+
 # ADR-002: Flue framework for agent orchestration
 
 ## Status

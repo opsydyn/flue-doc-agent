@@ -1,3 +1,7 @@
+---
+title: "ADR-001: Bun monorepo with agents/* workspace layout"
+---
+
 # ADR-001: Bun monorepo with agents/* workspace layout
 
 ## Status

@@ -1,3 +1,7 @@
+---
+title: "ADR-010: Biome + linteffect for formatting and linting"
+---
+
 # ADR-010: Biome + linteffect for formatting and linting
 
 ## Status
