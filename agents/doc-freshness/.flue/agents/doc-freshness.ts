@@ -1,9 +1,26 @@
-import { Effect } from "effect";
+import { Effect, Result } from "effect";
 import { Type, type FlueContext, type ToolDef } from "@flue/sdk/client";
 import * as v from "valibot";
 import { UrlChecker, UrlCheckerDefault } from "../../src/UrlChecker";
+import {
+	type GitHubRepoPath,
+	type PageViews,
+	type PageviewThreshold,
+	type RelativeFilePath,
+	httpUrl,
+} from "../../src/Domain";
 
 export const triggers = { webhook: true };
+
+// -----------------------------------------------------------------------------
+// Types
+// -----------------------------------------------------------------------------
+
+type Signals = {
+	pageviews: Record<RelativeFilePath, PageViews>;
+	repoTraffic: Record<GitHubRepoPath, PageViews>;
+	pageviewThreshold: PageviewThreshold;
+};
 
 // -----------------------------------------------------------------------------
 // Tools
@@ -16,19 +33,25 @@ const checkUrl: ToolDef = {
 	parameters: Type.Object({
 		url: Type.String({ description: "The URL to check" }),
 	}),
-	execute: (args) =>
-		Effect.gen(function* () {
+	execute: (args) => {
+		const rawUrl = args.url as string;
+		const urlResult = httpUrl.getResult(rawUrl);
+		if (!Result.isSuccess(urlResult)) return Promise.resolve("invalid-url");
+
+		return Effect.gen(function* () {
 			const checker = yield* UrlChecker;
-			return yield* checker.check(args.url as string);
+			const code = yield* checker.check(urlResult.success);
+			return String(code);
 		}).pipe(
 			Effect.catchTag("UrlCheckError", () => Effect.succeed("unreachable")),
 			Effect.provide(UrlCheckerDefault),
 			Effect.runPromise,
-		),
+		);
+	},
 };
 
 // -----------------------------------------------------------------------------
-// Result schema (valibot)
+// Result schema (valibot — Flue boundary)
 // -----------------------------------------------------------------------------
 
 const resultSchema = v.object({
@@ -52,25 +75,28 @@ const resultSchema = v.object({
 });
 
 // -----------------------------------------------------------------------------
-// Signals type
-// -----------------------------------------------------------------------------
-
-type Signals = {
-	// relative-file-path → 30-day page views from One Dollar Stats
-	pageviews: Record<string, number>;
-	// github.com path → 14-day view count from GitHub Traffic API (top 10 only)
-	repoTraffic: Record<string, number>;
-	pageviewThreshold: number;
-};
-
-// -----------------------------------------------------------------------------
 // Handler
 // -----------------------------------------------------------------------------
 
 export default async function ({ init, payload }: FlueContext) {
 	const repoPath = (payload.repoPath as string | undefined) ?? "/workspace";
 	const glob = (payload.glob as string | undefined) ?? "**/*.md";
-	const signals = (payload.signals as Signals | undefined) ?? null;
+
+	const rawSignals = payload.signals as
+		| {
+				pageviews: Record<string, number>;
+				repoTraffic: Record<string, number>;
+				pageviewThreshold: number;
+		  }
+		| undefined;
+
+	const signals: Signals | null = rawSignals
+		? {
+				pageviews: rawSignals.pageviews as Record<RelativeFilePath, PageViews>,
+				repoTraffic: rawSignals.repoTraffic as Record<GitHubRepoPath, PageViews>,
+				pageviewThreshold: rawSignals.pageviewThreshold as PageviewThreshold,
+		  }
+		: null;
 
 	const agent = await init({
 		sandbox: "local",

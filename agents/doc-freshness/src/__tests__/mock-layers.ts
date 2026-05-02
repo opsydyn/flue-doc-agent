@@ -4,6 +4,7 @@ import {
 	HttpClientError,
 	HttpClientResponse,
 } from "effect/unstable/http";
+import type { HttpUrl } from "../Domain";
 import { UrlChecker, UrlCheckerLayer } from "../UrlChecker";
 
 export const mockHttpLayer = (status: number) =>
@@ -29,7 +30,7 @@ export const networkErrorLayer = (cause: string) =>
 		),
 	);
 
-export const runCheck = (url: string, httpLayer: Layer.Layer<HttpClient.HttpClient>) =>
+export const runCheck = (url: HttpUrl, httpLayer: Layer.Layer<HttpClient.HttpClient>) =>
 	Effect.gen(function* () {
 		const checker = yield* UrlChecker;
 		return yield* checker.check(url);

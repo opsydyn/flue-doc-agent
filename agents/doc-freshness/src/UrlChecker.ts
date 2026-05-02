@@ -2,13 +2,14 @@ import { Context, Data, Effect, Layer } from "effect";
 import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient";
 import * as HttpClient from "effect/unstable/http/HttpClient";
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
+import type { HttpStatusCode, HttpUrl } from "./Domain";
 
 // -----------------------------------------------------------------------------
 // Errors
 // -----------------------------------------------------------------------------
 
 export class UrlCheckError extends Data.TaggedError("UrlCheckError")<{
-	readonly url: string;
+	readonly url: HttpUrl;
 	readonly cause: unknown;
 }> {}
 
@@ -21,9 +22,9 @@ const make = Effect.gen(function* () {
 	const client = baseClient.pipe(HttpClient.followRedirects());
 	// No filterStatusOk — we want to capture 4xx/5xx status codes, not fail on them.
 
-	const check = Effect.fn("UrlChecker.check")(function* (url: string) {
+	const check = Effect.fn("UrlChecker.check")(function* (url: HttpUrl) {
 		return yield* client.execute(HttpClientRequest.head(url)).pipe(
-			Effect.map((res) => String(res.status)),
+			Effect.map((res) => res.status as HttpStatusCode),
 			Effect.timeout("5 seconds"),
 			Effect.mapError((cause) => new UrlCheckError({ url, cause })),
 		);
