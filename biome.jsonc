@@ -1,8 +1,6 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.0.0/schema.json",
-	"plugins": [
-		"@catenarycloud/linteffect"
-	],
+	"$schema": "https://biomejs.dev/schemas/2.4.14/schema.json",
+	 "extends": ["@catenarycloud/linteffect"],
 	"assist": {
 		"actions": {
 			"source": {
@@ -19,7 +17,7 @@
 			},
 			"correctness": {
 				"noUnusedImports": "warn",
-				"useImportExtensions": "warn"
+				"useImportExtensions": "off"
 			},
 			"suspicious": {
 				"noExplicitAny": "warn",
@@ -42,7 +40,7 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"ignore": ["packages/docs/**"]
+		"includes": ["**", "!packages/docs/**"]
 	},
 	"overrides": [
 		{

@@ -1,14 +1,15 @@
-import { Effect, Result } from "effect";
-import { Type, type FlueContext, type ToolDef } from "@flue/sdk/client";
+import { type FlueContext, type ToolDef, Type } from "@flue/sdk/client";
+import { Effect, Match, Option, Result } from "effect";
 import * as v from "valibot";
-import { UrlChecker, UrlCheckerDefault } from "../../src/UrlChecker";
 import {
 	type GitHubRepoPath,
+	httpUrl,
 	type PageViews,
 	type PageviewThreshold,
 	type RelativeFilePath,
-	httpUrl,
 } from "../../src/Domain";
+import { OdsClient, OdsClientDefault } from "../../src/OdsClient";
+import { UrlChecker, UrlCheckerDefault } from "../../src/UrlChecker";
 
 export const triggers = { webhook: true };
 
@@ -22,6 +23,15 @@ type Signals = {
 	pageviewThreshold: PageviewThreshold;
 };
 
+// Valibot schema for the signals block injected from the CI workflow.
+const signalsPayloadSchema = v.nullish(
+	v.object({
+		pageviews: v.record(v.string(), v.number()),
+		repoTraffic: v.record(v.string(), v.number()),
+		pageviewThreshold: v.number(),
+	}),
+);
+
 // -----------------------------------------------------------------------------
 // Tools
 // -----------------------------------------------------------------------------
@@ -34,7 +44,7 @@ const checkUrl: ToolDef = {
 		url: Type.String({ description: "The URL to check" }),
 	}),
 	execute: (args) => {
-		const rawUrl = args.url as string;
+		const rawUrl = String(args.url);
 		const urlResult = httpUrl.getResult(rawUrl);
 		if (!Result.isSuccess(urlResult)) return Promise.resolve("invalid-url");
 
@@ -43,6 +53,7 @@ const checkUrl: ToolDef = {
 			const code = yield* checker.check(urlResult.success);
 			return String(code);
 		}).pipe(
+			// biome-ignore lint/plugin: ToolDef boundary — execute must return string; "unreachable" is a literal the LLM reads, not a control-flow token
 			Effect.catchTag("UrlCheckError", () => Effect.succeed("unreachable")),
 			Effect.provide(UrlCheckerDefault),
 			Effect.runPromise,
@@ -55,28 +66,24 @@ const fetchAnalytics: ToolDef = {
 	description:
 		"Fetch 30-day page-view data from One Dollar Stats. Returns a JSON string with a results array of {dimensions: [urlPath], metrics: [viewCount]}, or an error field if ODS is not configured.",
 	parameters: Type.Object({}),
-	execute: async () => {
-		const apiKey = process.env.ODS_API_KEY;
-		const siteId = process.env.ODS_SITE_ID;
-		if (!apiKey || !siteId) {
-			return JSON.stringify({ error: "ODS_API_KEY or ODS_SITE_ID not configured" });
-		}
-		try {
-			const res = await fetch("https://api.onedollarstats.com/api", {
-				method: "POST",
-				headers: { "Content-Type": "application/json", "x-api-key": apiKey },
-				body: JSON.stringify({
-					site_id: siteId,
-					metrics: ["pageviews"],
-					date_range: "30d",
-					dimensions: ["event:page"],
-				}),
-			});
-			return JSON.stringify(await res.json());
-		} catch (e) {
-			return JSON.stringify({ error: String(e) });
-		}
-	},
+	execute: () =>
+		Effect.gen(function* () {
+			const apiKey = yield* Effect.fromNullishOr(process.env.ODS_API_KEY);
+			const siteId = yield* Effect.fromNullishOr(process.env.ODS_SITE_ID);
+			const ods = yield* OdsClient;
+			const data = yield* ods.fetchPageviews(apiKey, siteId);
+			// biome-ignore lint/plugin: ToolDef boundary — Flue execute must return a JSON string
+			return JSON.stringify(data);
+		}).pipe(
+			Effect.catchTag("NoSuchElementError", () =>
+				Effect.succeed(JSON.stringify({ error: "ODS_API_KEY or ODS_SITE_ID not configured" })),
+			),
+			Effect.catchTag("OdsClientError", (e) =>
+				Effect.succeed(JSON.stringify({ error: String(e.cause) })),
+			),
+			Effect.provide(OdsClientDefault),
+			Effect.runPromise,
+		),
 };
 
 // -----------------------------------------------------------------------------
@@ -126,41 +133,33 @@ export default async function ({ init, payload }: FlueContext) {
 
 	const session = await agent.session();
 
-	if (mode === "analytics") {
-		return await session.skill("analytics-report", {
-			result: analyticsSchema,
-		});
-	}
-
-	// --- check-staleness mode (default) ---
-
 	const repoPath = (payload.repoPath as string | undefined) ?? "/workspace";
 	const glob = (payload.glob as string | undefined) ?? "**/*.md";
+	const rawSignals = v.parse(signalsPayloadSchema, payload.signals);
+	const signals: Signals | null = Option.getOrNull(
+		Option.map(
+			Option.fromNullishOr(rawSignals),
+			(s): Signals => ({
+				pageviews: s.pageviews as Record<RelativeFilePath, PageViews>,
+				repoTraffic: s.repoTraffic as Record<GitHubRepoPath, PageViews>,
+				pageviewThreshold: s.pageviewThreshold as PageviewThreshold,
+			}),
+		),
+	);
 
-	const rawSignals = payload.signals as
-		| {
-				pageviews: Record<string, number>;
-				repoTraffic: Record<string, number>;
-				pageviewThreshold: number;
-		  }
-		| undefined;
-
-	const signals: Signals | null = rawSignals
-		? {
-				pageviews: rawSignals.pageviews as Record<RelativeFilePath, PageViews>,
-				repoTraffic: rawSignals.repoTraffic as Record<GitHubRepoPath, PageViews>,
-				pageviewThreshold: rawSignals.pageviewThreshold as PageviewThreshold,
-		  }
-		: null;
-
-	return await session.skill("check-staleness", {
-		args: {
-			repoPath,
-			glob,
-			pageviews: JSON.stringify(signals?.pageviews ?? null),
-			repoTraffic: JSON.stringify(signals?.repoTraffic ?? null),
-			pageviewThreshold: String(signals?.pageviewThreshold ?? 50),
-		},
-		result: freshnessSchema,
-	});
+	return await Match.value(mode).pipe(
+		Match.when("analytics", () => session.skill("analytics-report", { result: analyticsSchema })),
+		Match.orElse(() =>
+			session.skill("check-staleness", {
+				args: {
+					repoPath,
+					glob,
+					pageviews: JSON.stringify(signals?.pageviews ?? null),
+					repoTraffic: JSON.stringify(signals?.repoTraffic ?? null),
+					pageviewThreshold: String(signals?.pageviewThreshold ?? 50),
+				},
+				result: freshnessSchema,
+			}),
+		),
+	);
 }

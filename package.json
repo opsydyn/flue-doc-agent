@@ -16,7 +16,7 @@
 		"effect": "beta"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.0.0",
+		"@biomejs/biome": "2.4.14",
 		"@catenarycloud/linteffect": "0.0.4-1",
 		"@effect/language-service": "^0.85.1",
 		"@flue/cli": "^0.3.6",
