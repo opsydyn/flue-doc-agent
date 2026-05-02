@@ -67,7 +67,34 @@ Parse the pageviews JSON (if not `"null"`), then for each file look up its path.
 Set `pageViews30d` to the integer from the pageviews map, or omit the field if the path is
 not present or signals are null.
 
-## Step 4 — Return the result
+## Step 4 — Generate the CI report
+
+Compose a GitHub-flavoured markdown string for the `report` field. Include:
+
+1. A summary table:
+
+   ```markdown
+   ## Doc Freshness Report
+
+   | Status | Count |
+   | --- | --- |
+   | Total | N |
+   | Fresh | N |
+   | Stale | N |
+   | Warnings | N |
+   | Critical | N |
+   ```
+
+2. If any files have `priority: "critical"`, a **Critical (stale + high demand)** section listing
+   each file as `- **path** (N views) — issue1; issue2`.
+
+3. If any stale files have `priority: "low"`, a **Stale (low demand)** section listing each file.
+
+4. If any files have status `"warning"`, a **Warnings** section listing each file.
+
+Set `shouldFail` to `true` if `summary.critical > 0`, otherwise `false`.
+
+## Step 5 — Return the result
 
 Return a JSON object in the result block with this exact shape:
 
@@ -95,9 +122,11 @@ Return a JSON object in the result block with this exact shape:
     "stale": 2,
     "warnings": 1,
     "critical": 1
-  }
+  },
+  "report": "## Doc Freshness Report\n\n| Status | Count |\n| --- | --- |\n| Total | 12 |\n...",
+  "shouldFail": true
 }
 ```
 
 `priority` and `pageViews30d` are omitted for `fresh` files. `summary.critical` is the count
-of files with `priority: "critical"`.
+of files with `priority: "critical"`. `shouldFail` is `true` when `summary.critical > 0`.

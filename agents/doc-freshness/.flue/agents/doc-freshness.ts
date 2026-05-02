@@ -72,6 +72,8 @@ const resultSchema = v.object({
 		warnings: v.number(),
 		critical: v.number(),
 	}),
+	report: v.string(),
+	shouldFail: v.boolean(),
 });
 
 // -----------------------------------------------------------------------------

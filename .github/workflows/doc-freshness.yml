@@ -121,49 +121,17 @@ jobs:
           RESULT=$(flue run doc-freshness --target node \
             --id "freshness-${{ github.run_id }}" \
             --payload "$PAYLOAD")
-          echo "$RESULT"
 
-          TOTAL=$(echo "$RESULT"    | jq -r '.summary.total    // 0')
-          FRESH=$(echo "$RESULT"    | jq -r '.summary.fresh    // 0')
-          STALE=$(echo "$RESULT"    | jq -r '.summary.stale    // 0')
-          WARN=$(echo "$RESULT"     | jq -r '.summary.warnings // 0')
-          CRITICAL=$(echo "$RESULT" | jq -r '.summary.critical // 0')
+          # Agent writes the report; CI just passes it through
+          echo "$RESULT" | jq -r '.report' >> "$GITHUB_STEP_SUMMARY"
 
-          {
-            echo "## Doc Freshness Report"
-            echo ""
-            echo "| Status | Count |"
-            echo "| --- | --- |"
-            echo "| Total | $TOTAL |"
-            echo "| Fresh | $FRESH |"
-            echo "| Stale | $STALE |"
-            echo "| Warnings | $WARN |"
-            echo "| Critical | $CRITICAL |"
-            echo ""
-            if [ "$CRITICAL" -gt 0 ]; then
-              echo "### Critical (stale + high demand)"
-              echo ""
-              echo "$RESULT" | jq -r '.files[] | select(.priority == "critical") | "- **\(.path)** (\(.pageViews30d // "?") views) — \(.issues | join("; "))"'
-              echo ""
-            fi
-            if [ "$STALE" -gt "$CRITICAL" ]; then
-              echo "### Stale (low demand)"
-              echo ""
-              echo "$RESULT" | jq -r '.files[] | select(.status == "stale" and .priority != "critical") | "- **\(.path)** — \(.issues | join("; "))"'
-              echo ""
-            fi
-            if [ "$WARN" -gt 0 ]; then
-              echo "### Warnings"
-              echo ""
-              echo "$RESULT" | jq -r '.files[] | select(.status == "warning") | "- **\(.path)** — \(.issues | join("; "))"'
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          # Fail on critical docs; warn (non-failing) on other stale/warning
-          if [ "$CRITICAL" -gt 0 ]; then
-            echo "::error::$CRITICAL critical stale doc(s) found — see job summary"
+          if [ "$(echo "$RESULT" | jq -r '.shouldFail')" = "true" ]; then
+            CRITICAL=$(echo "$RESULT" | jq -r '.summary.critical')
+            echo "::error::${CRITICAL} critical stale doc(s) found — see job summary"
             exit 1
           fi
+
+          STALE=$(echo "$RESULT" | jq -r '.summary.stale // 0')
           if [ "$STALE" -gt 0 ]; then
-            echo "::warning::$STALE stale doc(s) found (low demand) — see job summary"
+            echo "::warning::${STALE} stale doc(s) found (low demand) — see job summary"
           fi
