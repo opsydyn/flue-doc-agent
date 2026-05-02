@@ -76,6 +76,10 @@ class InvalidToolUrl extends Data.TaggedError("InvalidToolUrl")<{
 	readonly reason: string;
 }> {}
 
+class MissingAnalyticsConfig extends Data.TaggedError("MissingAnalyticsConfig")<{
+	readonly variable: "ODS_API_KEY" | "ODS_SITE_ID";
+}> {}
+
 const checkUrlArgsSchema = Schema.Struct({
 	url: Schema.String,
 });
@@ -147,6 +151,14 @@ const analyticsToolResultJsonSchema = Schema.fromJsonString(
 );
 const encodeAnalyticsToolResult = Schema.encodeSync(analyticsToolResultJsonSchema);
 
+const requireAnalyticsConfig = (
+	value: string | undefined,
+	variable: "ODS_API_KEY" | "ODS_SITE_ID",
+) =>
+	Schema.decodeUnknownEffect(Schema.NonEmptyString)(value).pipe(
+		Effect.mapError(() => new MissingAnalyticsConfig({ variable })),
+	);
+
 const fetchAnalytics: ToolDef = {
 	name: "fetch-analytics",
 	description:
@@ -154,14 +166,14 @@ const fetchAnalytics: ToolDef = {
 	parameters: Type.Object({}),
 	execute: () =>
 		Effect.gen(function* () {
-			const apiKey = yield* Effect.fromNullishOr(process.env.ODS_API_KEY);
-			const siteId = yield* Effect.fromNullishOr(process.env.ODS_SITE_ID);
+			const apiKey = yield* requireAnalyticsConfig(process.env.ODS_API_KEY, "ODS_API_KEY");
+			const siteId = yield* requireAnalyticsConfig(process.env.ODS_SITE_ID, "ODS_SITE_ID");
 			const ods = yield* OdsClient;
 			const data = yield* ods.fetchPageviews(apiKey, siteId);
 
 			return yield* Schema.decodeUnknownEffect(odsPageviewsSchema)(data);
 		}).pipe(
-			Effect.catchTag("NoSuchElementError", () =>
+			Effect.catchTag("MissingAnalyticsConfig", () =>
 				Effect.succeed(
 					analyticsUnavailableSchema.make({
 						error: "ODS_API_KEY or ODS_SITE_ID not configured",
@@ -170,6 +182,9 @@ const fetchAnalytics: ToolDef = {
 			),
 			Effect.catchTag("OdsClientError", (e) =>
 				Effect.succeed(analyticsUnavailableSchema.make({ error: String(e.cause) })),
+			),
+			Effect.catchTag("SchemaError", (e) =>
+				Effect.succeed(analyticsUnavailableSchema.make({ error: String(e) })),
 			),
 			Effect.map(encodeAnalyticsToolResult),
 			Effect.provide(OdsClientDefault),

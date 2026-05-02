@@ -7,8 +7,12 @@ Perform a full documentation freshness audit for the repository at `{{repoPath}}
 
 ## Step 1 — Find all markdown files
 
-Use `glob` to find all files matching `{{repoPath}}/{{glob}}`. Ignore any paths containing
-`node_modules/`, `dist/`, or `.git/`.
+Use `glob` to find all files matching `{{glob}}`. The `glob` argument is already resolved to
+an absolute pattern rooted at `{{repoPath}}` when the agent runs in CI. Ignore any paths
+containing `node_modules/`, `dist/`, or `.git/`.
+
+When reporting files or passing file paths to `git -C {{repoPath}}`, convert absolute matches
+back to paths relative to `{{repoPath}}`.
 
 ## Step 2 — For each markdown file
 
@@ -39,7 +43,10 @@ For each file found:
    target file exists under `{{repoPath}}`. Missing targets → issue: `"broken link: <target>"`
 
 5. **Check external links** — for each `https?://` URL found in the file, call `check-url`.
-   Non-2xx or unreachable → issue: `"dead link: <url> (<status>)"`
+   Parse the returned JSON tagged result:
+   - `{ "_tag": "Reachable", "statusCode": N }` — if `N` is outside `200..299`, add issue: `"dead link: <url> (<N>)"`
+   - `{ "_tag": "Unreachable", "reason": "..." }` — add issue: `"dead link: <url> (unreachable)"`
+   - `{ "_tag": "InvalidUrl", "reason": "..." }` — add issue: `"dead link: <url> (invalid-url)"`
 
 6. Assign status:
    - `stale` — any code file newer than the doc
