@@ -9,6 +9,11 @@ export default defineConfig({
 	integrations: [
 		starlight({
 			title: 'doc-agent',
+			logo: {
+				src: './src/assets/logo.png',
+				alt: 'doc-agent logo',
+				replacesTitle: false,
+			},
 			description: 'Autonomous documentation freshness agent built on Flue + Effect.',
 			customCss: [
 				"@fontsource/ibm-plex-mono/400.css",
