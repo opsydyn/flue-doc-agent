@@ -36,6 +36,8 @@ const resultSchema = v.object({
 		v.object({
 			path: v.string(),
 			status: v.picklist(["fresh", "stale", "warning"]),
+			priority: v.optional(v.picklist(["critical", "medium", "low"])),
+			pageViews30d: v.optional(v.number()),
 			lastDocCommit: v.string(),
 			issues: v.array(v.string()),
 		}),
@@ -45,8 +47,21 @@ const resultSchema = v.object({
 		fresh: v.number(),
 		stale: v.number(),
 		warnings: v.number(),
+		critical: v.number(),
 	}),
 });
+
+// -----------------------------------------------------------------------------
+// Signals type
+// -----------------------------------------------------------------------------
+
+type Signals = {
+	// relative-file-path → 30-day page views from One Dollar Stats
+	pageviews: Record<string, number>;
+	// github.com path → 14-day view count from GitHub Traffic API (top 10 only)
+	repoTraffic: Record<string, number>;
+	pageviewThreshold: number;
+};
 
 // -----------------------------------------------------------------------------
 // Handler
@@ -55,6 +70,7 @@ const resultSchema = v.object({
 export default async function ({ init, payload }: FlueContext) {
 	const repoPath = (payload.repoPath as string | undefined) ?? "/workspace";
 	const glob = (payload.glob as string | undefined) ?? "**/*.md";
+	const signals = (payload.signals as Signals | undefined) ?? null;
 
 	const agent = await init({
 		sandbox: "local",
@@ -65,7 +81,13 @@ export default async function ({ init, payload }: FlueContext) {
 	const session = await agent.session();
 
 	return await session.skill("check-staleness", {
-		args: { repoPath, glob },
+		args: {
+			repoPath,
+			glob,
+			pageviews: JSON.stringify(signals?.pageviews ?? null),
+			repoTraffic: JSON.stringify(signals?.repoTraffic ?? null),
+			pageviewThreshold: String(signals?.pageviewThreshold ?? 50),
+		},
 		result: resultSchema,
 	});
 }

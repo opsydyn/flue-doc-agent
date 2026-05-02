@@ -1,6 +1,6 @@
 ---
 name: check-staleness
-description: Full documentation freshness audit — scans markdown files, checks git history of referenced code, validates links, and returns a structured report.
+description: Full documentation freshness audit — scans markdown files, checks git history of referenced code, validates links, scores by page-view demand, and returns a structured report.
 ---
 
 Perform a full documentation freshness audit for the repository at `{{repoPath}}`.
@@ -46,7 +46,28 @@ For each file found:
    - `warning` — broken internal link or dead external URL (but no stale code refs)
    - `fresh` — no issues
 
-## Step 3 — Return the result
+## Step 3 — Score by demand (priority)
+
+Page-view signals: `{{pageviews}}` is a JSON object mapping relative file path → 30-day view
+count from the deployed docs site. `{{repoTraffic}}` maps GitHub repo path → 14-day view count.
+Either may be the string `"null"` if signals were not fetched this run.
+
+The threshold for "high demand" is `{{pageviewThreshold}}` views in 30 days.
+
+Parse the pageviews JSON (if not `"null"`), then for each file look up its path. Apply:
+
+| Status | 30-day page views | Priority |
+| --- | --- | --- |
+| `stale` | > threshold | `critical` |
+| `stale` | ≤ threshold or not found | `low` |
+| `warning` | > threshold | `medium` |
+| `warning` | ≤ threshold or not found | `low` |
+| `fresh` | any | omit priority field entirely |
+
+Set `pageViews30d` to the integer from the pageviews map, or omit the field if the path is
+not present or signals are null.
+
+## Step 4 — Return the result
 
 Return a JSON object in the result block with this exact shape:
 
@@ -54,17 +75,29 @@ Return a JSON object in the result block with this exact shape:
 {
   "files": [
     {
-      "path": "docs/getting-started.md",
+      "path": "packages/docs/src/content/docs/decisions/ADR-006-url-checker-anti-corruption-layer.md",
       "status": "stale",
+      "priority": "critical",
+      "pageViews30d": 142,
       "lastDocCommit": "2024-01-15T10:30:00+00:00",
-      "issues": ["src/auth.ts updated after this doc (code: 2024-03-01, doc: 2024-01-15)"]
+      "issues": ["agents/doc-freshness/src/UrlChecker.ts updated after this doc (code: 2024-03-01, doc: 2024-01-15)"]
+    },
+    {
+      "path": "packages/docs/src/content/docs/diataxis/compass.md",
+      "status": "fresh",
+      "lastDocCommit": "2024-05-01T09:00:00+00:00",
+      "issues": []
     }
   ],
   "summary": {
     "total": 12,
     "fresh": 9,
     "stale": 2,
-    "warnings": 1
+    "warnings": 1,
+    "critical": 1
   }
 }
 ```
+
+`priority` and `pageViews30d` are omitted for `fresh` files. `summary.critical` is the count
+of files with `priority: "critical"`.

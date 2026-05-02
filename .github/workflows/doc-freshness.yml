@@ -9,6 +9,10 @@ on:
         description: 'Glob pattern for docs to scan (relative to repo root)'
         required: false
         default: 'packages/docs/src/content/docs/**/*.md'
+      pageview_threshold:
+        description: '30-day page view threshold for "critical" priority'
+        required: false
+        default: '50'
 
 jobs:
   check-freshness:
@@ -33,22 +37,97 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Fetch analytics signals
+        id: signals
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ODS_API_KEY: ${{ secrets.ODS_API_KEY }}
+          ODS_SITE_ID: ${{ vars.ODS_SITE_ID }}
+          PAGEVIEW_THRESHOLD: ${{ github.event.inputs.pageview_threshold || '50' }}
+        run: |
+          # GitHub Traffic API — top-10 paths, 14-day rolling window
+          gh api repos/${{ github.repository }}/traffic/popular/paths \
+            > /tmp/gh-traffic.json 2>/dev/null || echo "[]" > /tmp/gh-traffic.json
+
+          # One Dollar Stats — per-page views, 30-day window
+          if [ -n "$ODS_API_KEY" ] && [ -n "$ODS_SITE_ID" ]; then
+            curl -sf -X POST https://api.onedollarstats.com/api \
+              -H "x-api-key: $ODS_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d "{\"site_id\":\"$ODS_SITE_ID\",\"metrics\":[\"pageviews\"],\"date_range\":\"30d\",\"dimensions\":[\"event:page\"]}" \
+              > /tmp/ods-pageviews.json || echo '{"results":[]}' > /tmp/ods-pageviews.json
+          else
+            echo '{"results":[]}' > /tmp/ods-pageviews.json
+          fi
+
+          # Map ODS URL paths → relative file paths, merge all signals into payload
+          node -e "
+            const { execSync } = require('child_process');
+            const fs = require('fs');
+            const path = require('path');
+
+            const workspace = process.env.GITHUB_WORKSPACE;
+            const base = '/flue-doc-agent';
+            const threshold = parseInt(process.env.PAGEVIEW_THRESHOLD || '50');
+
+            // Build slug → relative-file-path lookup from the docs content tree
+            const docsRoot = path.join(workspace, 'packages/docs/src/content/docs');
+            const allFiles = execSync(\`find \${docsRoot} -name '*.md' -o -name '*.mdx'\`)
+              .toString().trim().split('\n').filter(Boolean);
+
+            const slugToRelPath = {};
+            for (const f of allFiles) {
+              const contentRel = path.relative(docsRoot, f)
+                .replace(/\.mdx?\$/, '').toLowerCase().replace(/\\\\/g, '/');
+              slugToRelPath[contentRel] = path.relative(workspace, f);
+            }
+
+            // Parse responses (tolerate missing files)
+            let ods = { results: [] };
+            let gh = [];
+            try { ods = JSON.parse(fs.readFileSync('/tmp/ods-pageviews.json', 'utf8')); } catch {}
+            try { gh = JSON.parse(fs.readFileSync('/tmp/gh-traffic.json', 'utf8')); } catch {}
+
+            // ODS: URL path (/flue-doc-agent/decisions/adr-006-.../) → relative file path
+            const pageviews = {};
+            for (const row of ods.results ?? []) {
+              const urlPath = row.dimensions[0];
+              const slug = urlPath.replace(base + '/', '').replace(/\\/\$/, '');
+              if (slugToRelPath[slug]) pageviews[slugToRelPath[slug]] = row.metrics[0];
+            }
+
+            // GitHub Traffic: repo path → 14-day count (top 10 only)
+            const repoTraffic = {};
+            for (const row of gh ?? []) repoTraffic[row.path] = row.count;
+
+            const signals = JSON.stringify({ pageviews, repoTraffic, pageviewThreshold: threshold });
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, 'signals=' + signals + '\n');
+          "
+
       - name: Run doc-freshness agent
         working-directory: agents/doc-freshness
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           GLOB="${{ github.event.inputs.glob || 'packages/docs/src/content/docs/**/*.md' }}"
+          SIGNALS='${{ steps.signals.outputs.signals }}'
+
+          PAYLOAD=$(jq -n \
+            --arg repoPath "$GITHUB_WORKSPACE" \
+            --arg glob "$GLOB" \
+            --argjson signals "$SIGNALS" \
+            '{repoPath: $repoPath, glob: $glob, signals: $signals}')
+
           RESULT=$(flue run doc-freshness --target node \
             --id "freshness-${{ github.run_id }}" \
-            --payload "{\"repoPath\": \"$GITHUB_WORKSPACE\", \"glob\": \"$GLOB\"}")
+            --payload "$PAYLOAD")
           echo "$RESULT"
 
-          # Write job summary
-          TOTAL=$(echo "$RESULT" | jq -r '.summary.total // 0')
-          FRESH=$(echo "$RESULT" | jq -r '.summary.fresh // 0')
-          STALE=$(echo "$RESULT" | jq -r '.summary.stale // 0')
-          WARN=$(echo "$RESULT"  | jq -r '.summary.warnings // 0')
+          TOTAL=$(echo "$RESULT"    | jq -r '.summary.total    // 0')
+          FRESH=$(echo "$RESULT"    | jq -r '.summary.fresh    // 0')
+          STALE=$(echo "$RESULT"    | jq -r '.summary.stale    // 0')
+          WARN=$(echo "$RESULT"     | jq -r '.summary.warnings // 0')
+          CRITICAL=$(echo "$RESULT" | jq -r '.summary.critical // 0')
 
           {
             echo "## Doc Freshness Report"
@@ -59,22 +138,32 @@ jobs:
             echo "| Fresh | $FRESH |"
             echo "| Stale | $STALE |"
             echo "| Warnings | $WARN |"
+            echo "| Critical | $CRITICAL |"
             echo ""
-            if [ "$STALE" -gt 0 ]; then
-              echo "### Stale docs"
+            if [ "$CRITICAL" -gt 0 ]; then
+              echo "### Critical (stale + high demand)"
               echo ""
-              echo "$RESULT" | jq -r '.files[] | select(.status == "stale") | "- **\(.path)** — \(.issues | join("; "))"'
+              echo "$RESULT" | jq -r '.files[] | select(.priority == "critical") | "- **\(.path)** (\(.pageViews30d // "?") views) — \(.issues | join("; "))"'
+              echo ""
+            fi
+            if [ "$STALE" -gt "$CRITICAL" ]; then
+              echo "### Stale (low demand)"
+              echo ""
+              echo "$RESULT" | jq -r '.files[] | select(.status == "stale" and .priority != "critical") | "- **\(.path)** — \(.issues | join("; "))"'
+              echo ""
             fi
             if [ "$WARN" -gt 0 ]; then
-              echo ""
               echo "### Warnings"
               echo ""
               echo "$RESULT" | jq -r '.files[] | select(.status == "warning") | "- **\(.path)** — \(.issues | join("; "))"'
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
-          # Fail the job if stale docs were found
-          if [ "$STALE" -gt 0 ]; then
-            echo "::error::$STALE stale doc(s) found — see job summary for details"
+          # Fail on critical docs; warn (non-failing) on other stale/warning
+          if [ "$CRITICAL" -gt 0 ]; then
+            echo "::error::$CRITICAL critical stale doc(s) found — see job summary"
             exit 1
+          fi
+          if [ "$STALE" -gt 0 ]; then
+            echo "::warning::$STALE stale doc(s) found (low demand) — see job summary"
           fi
