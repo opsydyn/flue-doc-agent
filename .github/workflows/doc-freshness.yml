@@ -104,6 +104,20 @@ jobs:
             fs.appendFileSync(process.env.GITHUB_OUTPUT, 'signals=' + signals + '\n');
           "
 
+      - name: ODS analytics smoke test
+        working-directory: agents/doc-freshness
+        continue-on-error: true  # non-blocking — passes even if ODS is not yet configured
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ODS_API_KEY: ${{ secrets.ODS_API_KEY }}
+          ODS_SITE_ID: ${{ vars.ODS_SITE_ID }}
+        run: |
+          RESULT=$(flue run doc-freshness --target node \
+            --id "analytics-${{ github.run_id }}" \
+            --payload '{"mode":"analytics"}' \
+            | awk '/---RESULT_START---/{p=1;next}/---RESULT_END---/{p=0}p')
+          jq -r '.report' <<< "$RESULT" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Run doc-freshness agent
         working-directory: agents/doc-freshness
         env:

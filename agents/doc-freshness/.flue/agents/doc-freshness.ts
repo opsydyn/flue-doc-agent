@@ -50,11 +50,40 @@ const checkUrl: ToolDef = {
 	},
 };
 
+const fetchAnalytics: ToolDef = {
+	name: "fetch-analytics",
+	description:
+		"Fetch 30-day page-view data from One Dollar Stats. Returns a JSON string with a results array of {dimensions: [urlPath], metrics: [viewCount]}, or an error field if ODS is not configured.",
+	parameters: Type.Object({}),
+	execute: async () => {
+		const apiKey = process.env.ODS_API_KEY;
+		const siteId = process.env.ODS_SITE_ID;
+		if (!apiKey || !siteId) {
+			return JSON.stringify({ error: "ODS_API_KEY or ODS_SITE_ID not configured" });
+		}
+		try {
+			const res = await fetch("https://api.onedollarstats.com/api", {
+				method: "POST",
+				headers: { "Content-Type": "application/json", "x-api-key": apiKey },
+				body: JSON.stringify({
+					site_id: siteId,
+					metrics: ["pageviews"],
+					date_range: "30d",
+					dimensions: ["event:page"],
+				}),
+			});
+			return JSON.stringify(await res.json());
+		} catch (e) {
+			return JSON.stringify({ error: String(e) });
+		}
+	},
+};
+
 // -----------------------------------------------------------------------------
-// Result schema (valibot — Flue boundary)
+// Result schemas (valibot — Flue boundary)
 // -----------------------------------------------------------------------------
 
-const resultSchema = v.object({
+const freshnessSchema = v.object({
 	files: v.array(
 		v.object({
 			path: v.string(),
@@ -76,11 +105,35 @@ const resultSchema = v.object({
 	shouldFail: v.boolean(),
 });
 
+const analyticsSchema = v.object({
+	report: v.string(),
+	pageCount: v.number(),
+	totalViews: v.number(),
+});
+
 // -----------------------------------------------------------------------------
 // Handler
 // -----------------------------------------------------------------------------
 
 export default async function ({ init, payload }: FlueContext) {
+	const mode = (payload.mode as string | undefined) ?? "check-staleness";
+
+	const agent = await init({
+		sandbox: "local",
+		model: "openai/gpt-4o",
+		tools: [checkUrl, fetchAnalytics],
+	});
+
+	const session = await agent.session();
+
+	if (mode === "analytics") {
+		return await session.skill("analytics-report", {
+			result: analyticsSchema,
+		});
+	}
+
+	// --- check-staleness mode (default) ---
+
 	const repoPath = (payload.repoPath as string | undefined) ?? "/workspace";
 	const glob = (payload.glob as string | undefined) ?? "**/*.md";
 
@@ -100,14 +153,6 @@ export default async function ({ init, payload }: FlueContext) {
 		  }
 		: null;
 
-	const agent = await init({
-		sandbox: "local",
-		model: "openai/gpt-4o",
-		tools: [checkUrl],
-	});
-
-	const session = await agent.session();
-
 	return await session.skill("check-staleness", {
 		args: {
 			repoPath,
@@ -116,6 +161,6 @@ export default async function ({ init, payload }: FlueContext) {
 			repoTraffic: JSON.stringify(signals?.repoTraffic ?? null),
 			pageviewThreshold: String(signals?.pageviewThreshold ?? 50),
 		},
-		result: resultSchema,
+		result: freshnessSchema,
 	});
 }
