@@ -1,13 +1,8 @@
 import { type FlueContext, type ToolDef, Type } from "@flue/sdk/client";
-import { Effect, Match, Option, Result } from "effect";
+import { Data, Effect, Match, Option, Schema, Struct } from "effect";
+import * as Record from "effect/Record";
 import * as v from "valibot";
-import {
-	type GitHubRepoPath,
-	httpUrl,
-	type PageViews,
-	type PageviewThreshold,
-	type RelativeFilePath,
-} from "../../src/Domain";
+import { httpUrl } from "../../src/Domain";
 import { OdsClient, OdsClientDefault } from "../../src/OdsClient";
 import { UrlChecker, UrlCheckerDefault } from "../../src/UrlChecker";
 
@@ -16,12 +11,6 @@ export const triggers = { webhook: true };
 // -----------------------------------------------------------------------------
 // Types
 // -----------------------------------------------------------------------------
-
-type Signals = {
-	pageviews: Record<RelativeFilePath, PageViews>;
-	repoTraffic: Record<GitHubRepoPath, PageViews>;
-	pageviewThreshold: PageviewThreshold;
-};
 
 // Valibot schema for the signals block injected from the CI workflow.
 const signalsPayloadSchema = v.nullish(
@@ -32,39 +21,136 @@ const signalsPayloadSchema = v.nullish(
 	}),
 );
 
+type SignalMapInput = { readonly [key: string]: number };
+type SignalsPayload = NonNullable<v.InferOutput<typeof signalsPayloadSchema>>;
+
+const pageViewsSchema = Schema.Number.check(
+	Schema.isInt(),
+	Schema.isGreaterThanOrEqualTo(0),
+);
+const pageviewThresholdSchema = Schema.Number.check(
+	Schema.isInt(),
+	Schema.isGreaterThan(0),
+);
+const signalMapSchema = Schema.Record(Schema.String, pageViewsSchema);
+const signalsSchema = Schema.Struct({
+	pageviews: signalMapSchema,
+	repoTraffic: signalMapSchema,
+	pageviewThreshold: pageviewThresholdSchema,
+});
+const nullableSignalMapJsonSchema = Schema.fromJsonString(Schema.NullOr(signalMapSchema));
+const defaultPageviewThreshold = pageviewThresholdSchema.make(50);
+const emptySignalMap = signalMapSchema.make({});
+const emptySignals = signalsSchema.make({
+	pageviews: emptySignalMap,
+	repoTraffic: emptySignalMap,
+	pageviewThreshold: defaultPageviewThreshold,
+});
+
+type Signals = typeof signalsSchema.Type;
+
+const makeSignalMap = (input: SignalMapInput) =>
+	signalMapSchema.make(
+		Record.reduce(input, emptySignalMap, (state, views, path) =>
+			Record.set(state, path, pageViewsSchema.make(views)),
+		),
+	);
+
+const makeSignals = (input: SignalsPayload): Signals =>
+	signalsSchema.make(
+		Struct.evolve(emptySignals, {
+			pageviews: () => makeSignalMap(input.pageviews),
+			repoTraffic: () => makeSignalMap(input.repoTraffic),
+			pageviewThreshold: () => pageviewThresholdSchema.make(input.pageviewThreshold),
+		}),
+	);
+
+const encodeNullableSignalMap = Schema.encodeSync(nullableSignalMapJsonSchema);
+const encodePageviewThreshold = Schema.encodeSync(Schema.NumberFromString);
+
 // -----------------------------------------------------------------------------
 // Tools
 // -----------------------------------------------------------------------------
 
+class InvalidToolUrl extends Data.TaggedError("InvalidToolUrl")<{
+	readonly reason: string;
+}> {}
+
+const checkUrlArgsSchema = Schema.Struct({
+	url: Schema.String,
+});
+const checkUrlReachableSchema = Schema.Struct({
+	_tag: Schema.Literal("Reachable"),
+	statusCode: Schema.Number,
+});
+const checkUrlInvalidSchema = Schema.Struct({
+	_tag: Schema.Literal("InvalidUrl"),
+	reason: Schema.String,
+});
+const checkUrlUnreachableSchema = Schema.Struct({
+	_tag: Schema.Literal("Unreachable"),
+	reason: Schema.String,
+});
+const checkUrlResultJsonSchema = Schema.fromJsonString(
+	Schema.Union([checkUrlReachableSchema, checkUrlInvalidSchema, checkUrlUnreachableSchema]),
+);
+const encodeCheckUrlResult = Schema.encodeSync(checkUrlResultJsonSchema);
+
 const checkUrl: ToolDef = {
 	name: "check-url",
 	description:
-		"Check if a URL is reachable via HTTP HEAD. Returns the HTTP status code as a string, or 'unreachable' on network error or timeout.",
+		"Check if a URL is reachable via HTTP HEAD. Returns a JSON tagged result: Reachable with statusCode, InvalidUrl with reason, or Unreachable with reason.",
 	parameters: Type.Object({
 		url: Type.String({ description: "The URL to check" }),
 	}),
-	execute: (args) => {
-		const rawUrl = String(args.url);
-		const urlResult = httpUrl.getResult(rawUrl);
-		if (!Result.isSuccess(urlResult)) return Promise.resolve("invalid-url");
-
-		return Effect.gen(function* () {
+	execute: (args) =>
+		Effect.gen(function* () {
+			const { url: rawUrl } = yield* Schema.decodeUnknownEffect(checkUrlArgsSchema)(args);
+			const url = yield* Effect.fromResult(httpUrl.getResult(rawUrl)).pipe(
+				Effect.mapError((reason) => new InvalidToolUrl({ reason })),
+			);
 			const checker = yield* UrlChecker;
-			const code = yield* checker.check(urlResult.success);
-			return String(code);
+			const code = yield* checker.check(url);
+			return checkUrlReachableSchema.make({ _tag: "Reachable", statusCode: code });
 		}).pipe(
-			// biome-ignore lint/plugin: ToolDef boundary — execute must return string; "unreachable" is a literal the LLM reads, not a control-flow token
-			Effect.catchTag("UrlCheckError", () => Effect.succeed("unreachable")),
+			Effect.catchTags({
+				InvalidToolUrl: (error) =>
+					Effect.succeed(
+						checkUrlInvalidSchema.make({ _tag: "InvalidUrl", reason: error.reason }),
+					),
+				UrlCheckError: (error) =>
+					Effect.succeed(
+						checkUrlUnreachableSchema.make({
+							_tag: "Unreachable",
+							reason: String(error.cause),
+						}),
+					),
+			}),
+			Effect.map(encodeCheckUrlResult),
 			Effect.provide(UrlCheckerDefault),
 			Effect.runPromise,
-		);
-	},
+		),
 };
+
+const odsPageviewResultSchema = Schema.Struct({
+	dimensions: Schema.Array(Schema.String),
+	metrics: Schema.Array(pageViewsSchema),
+});
+const odsPageviewsSchema = Schema.Struct({
+	results: Schema.Array(odsPageviewResultSchema),
+});
+const analyticsUnavailableSchema = Schema.Struct({
+	error: Schema.String,
+});
+const analyticsToolResultJsonSchema = Schema.fromJsonString(
+	Schema.Union([odsPageviewsSchema, analyticsUnavailableSchema]),
+);
+const encodeAnalyticsToolResult = Schema.encodeSync(analyticsToolResultJsonSchema);
 
 const fetchAnalytics: ToolDef = {
 	name: "fetch-analytics",
 	description:
-		"Fetch 30-day page-view data from One Dollar Stats. Returns a JSON string with a results array of {dimensions: [urlPath], metrics: [viewCount]}, or an error field if ODS is not configured.",
+		"Fetch 30-day page-view data from One Dollar Stats. Returns schema-encoded JSON with a results array of {dimensions: [urlPath], metrics: [viewCount]}, or an error field if ODS is not configured.",
 	parameters: Type.Object({}),
 	execute: () =>
 		Effect.gen(function* () {
@@ -72,15 +158,20 @@ const fetchAnalytics: ToolDef = {
 			const siteId = yield* Effect.fromNullishOr(process.env.ODS_SITE_ID);
 			const ods = yield* OdsClient;
 			const data = yield* ods.fetchPageviews(apiKey, siteId);
-			// biome-ignore lint/plugin: ToolDef boundary — Flue execute must return a JSON string
-			return JSON.stringify(data);
+
+			return yield* Schema.decodeUnknownEffect(odsPageviewsSchema)(data);
 		}).pipe(
 			Effect.catchTag("NoSuchElementError", () =>
-				Effect.succeed(JSON.stringify({ error: "ODS_API_KEY or ODS_SITE_ID not configured" })),
+				Effect.succeed(
+					analyticsUnavailableSchema.make({
+						error: "ODS_API_KEY or ODS_SITE_ID not configured",
+					}),
+				),
 			),
 			Effect.catchTag("OdsClientError", (e) =>
-				Effect.succeed(JSON.stringify({ error: String(e.cause) })),
+				Effect.succeed(analyticsUnavailableSchema.make({ error: String(e.cause) })),
 			),
+			Effect.map(encodeAnalyticsToolResult),
 			Effect.provide(OdsClientDefault),
 			Effect.runPromise,
 		),
@@ -118,6 +209,41 @@ const analyticsSchema = v.object({
 	totalViews: v.number(),
 });
 
+const checkStalenessArgsSchema = Schema.Struct({
+	repoPath: Schema.String,
+	glob: Schema.String,
+	pageviews: Schema.String,
+	repoTraffic: Schema.String,
+	pageviewThreshold: Schema.String,
+});
+
+const makeCheckStalenessArgs = (
+	repoPath: string,
+	glob: string,
+	signals: Option.Option<Signals>,
+) => {
+	const defaultArgs = checkStalenessArgsSchema.make({
+		repoPath,
+		glob,
+		pageviews: encodeNullableSignalMap(null),
+		repoTraffic: encodeNullableSignalMap(null),
+		pageviewThreshold: encodePageviewThreshold(defaultPageviewThreshold),
+	});
+
+	return checkStalenessArgsSchema.make(
+		Option.match(signals, {
+			onNone: () => defaultArgs,
+			onSome: (availableSignals) =>
+				Struct.evolve(defaultArgs, {
+					pageviews: () => encodeNullableSignalMap(availableSignals.pageviews),
+					repoTraffic: () => encodeNullableSignalMap(availableSignals.repoTraffic),
+					pageviewThreshold: () =>
+						encodePageviewThreshold(availableSignals.pageviewThreshold),
+				}),
+		}),
+	);
+};
+
 // -----------------------------------------------------------------------------
 // Handler
 // -----------------------------------------------------------------------------
@@ -136,28 +262,14 @@ export default async function ({ init, payload }: FlueContext) {
 	const repoPath = (payload.repoPath as string | undefined) ?? "/workspace";
 	const glob = (payload.glob as string | undefined) ?? "**/*.md";
 	const rawSignals = v.parse(signalsPayloadSchema, payload.signals);
-	const signals: Signals | null = Option.getOrNull(
-		Option.map(
-			Option.fromNullishOr(rawSignals),
-			(s): Signals => ({
-				pageviews: s.pageviews as Record<RelativeFilePath, PageViews>,
-				repoTraffic: s.repoTraffic as Record<GitHubRepoPath, PageViews>,
-				pageviewThreshold: s.pageviewThreshold as PageviewThreshold,
-			}),
-		),
-	);
+	const signals = Option.map(Option.fromNullishOr(rawSignals), makeSignals);
+	const checkStalenessArgs = makeCheckStalenessArgs(repoPath, glob, signals);
 
 	return await Match.value(mode).pipe(
 		Match.when("analytics", () => session.skill("analytics-report", { result: analyticsSchema })),
 		Match.orElse(() =>
 			session.skill("check-staleness", {
-				args: {
-					repoPath,
-					glob,
-					pageviews: JSON.stringify(signals?.pageviews ?? null),
-					repoTraffic: JSON.stringify(signals?.repoTraffic ?? null),
-					pageviewThreshold: String(signals?.pageviewThreshold ?? 50),
-				},
+				args: checkStalenessArgs,
 				result: freshnessSchema,
 			}),
 		),
