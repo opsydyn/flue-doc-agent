@@ -34,6 +34,18 @@ export default defineConfig({
 					items: [{ label: 'Introduction', slug: 'index' }],
 				},
 				{
+					label: 'Diátaxis',
+					items: [
+						{ label: 'Applying Diátaxis', slug: 'diataxis' },
+						{ label: 'Tutorials', slug: 'diataxis/tutorials' },
+						{ label: 'How-to guides', slug: 'diataxis/how-to-guides' },
+						{ label: 'Reference', slug: 'diataxis/reference' },
+						{ label: 'Explanation', slug: 'diataxis/explanation' },
+						{ label: 'The compass', slug: 'diataxis/compass' },
+						{ label: 'Workflow', slug: 'diataxis/workflow' },
+					],
+				},
+				{
 					label: 'Architecture Decisions',
 					autogenerate: { directory: 'decisions' },
 				},

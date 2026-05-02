@@ -1,0 +1,53 @@
+---
+title: Applying Diátaxis
+description: How we structure documentation in doc-agent using the Diátaxis framework.
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+[Diátaxis](https://diataxis.fr/) is a framework for technical documentation that identifies four distinct needs a reader can have — and four corresponding types of content. Using the wrong type for a given need is one of the most common causes of documentation that feels unhelpful even when it is accurate.
+
+## The four types
+
+| Type | Oriented toward | Answers |
+| --- | --- | --- |
+| **Tutorial** | Learning | "Help me get started" |
+| **How-to guide** | Problem-solving | "Help me do this specific thing" |
+| **Reference** | Information | "Tell me exactly how this works" |
+| **Explanation** | Understanding | "Help me understand why" |
+
+The key insight: these serve different users at different moments. A beginner needs a tutorial. An experienced user debugging a problem needs a how-to guide. A developer writing code against an API needs reference. Someone evaluating a design decision needs explanation. Mixing types in one page serves none of them well.
+
+## Two axes
+
+Diátaxis maps the four types onto two dimensions:
+
+- **Practical ↔ Theoretical** — does it involve doing, or thinking?
+- **Acquisition ↔ Application** — is the reader learning, or using existing skills?
+
+```text
+                 Practical
+                     │
+      Tutorials       │   How-to guides
+  (learning + doing)  │  (doing + applying)
+                     │
+ ─────────────────────┼──────────────────────
+                     │
+    Explanation       │   Reference
+ (learning + theory)  │  (applying + theory)
+                     │
+                 Theoretical
+```
+
+## In this project
+
+The ADRs in this site are **explanation** — they discuss design decisions, context, and trade-offs rather than instructing. The `check-staleness` skill is closer to a **how-to guide** embedded in the agent's prompt. The `CLAUDE.md` is primarily **reference**.
+
+<CardGrid>
+  <LinkCard title="Tutorials" href="/flue-doc-agent/diataxis/tutorials/" description="Learning-oriented — guide the reader through an experience" />
+  <LinkCard title="How-to guides" href="/flue-doc-agent/diataxis/how-to-guides/" description="Problem-oriented — direct a competent user to a result" />
+  <LinkCard title="Reference" href="/flue-doc-agent/diataxis/reference/" description="Information-oriented — describe the machinery accurately" />
+  <LinkCard title="Explanation" href="/flue-doc-agent/diataxis/explanation/" description="Understanding-oriented — illuminate and discuss" />
+  <LinkCard title="The compass" href="/flue-doc-agent/diataxis/compass/" description="A decision tool for choosing the right type" />
+  <LinkCard title="Workflow" href="/flue-doc-agent/diataxis/workflow/" description="How to apply Diátaxis iteratively" />
+</CardGrid>
