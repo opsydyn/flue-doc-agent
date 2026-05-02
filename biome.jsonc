@@ -41,6 +41,9 @@
 		"enabled": true,
 		"useIgnoreFile": true
 	},
+	"files": {
+		"ignore": ["packages/docs/**"]
+	},
 	"overrides": [
 		{
 			"includes": [

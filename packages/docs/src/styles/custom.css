@@ -1,0 +1,458 @@
+@layer knowledge-reset, starlight, knowledge-theme;
+
+@property --kb-hue {
+    syntax: "<angle>";
+    initial-value: 252deg;
+    inherits: true;
+}
+
+@property --kb-accent-chroma {
+    syntax: "<number>";
+    initial-value: 0.16;
+    inherits: true;
+}
+
+@property --kb-grid-size {
+    syntax: "<length>";
+    initial-value: 2rem;
+    inherits: false;
+}
+
+@property --kb-radius-lg {
+    syntax: "<length>";
+    initial-value: 0px;
+    inherits: true;
+}
+
+@property --kb-radius-md {
+    syntax: "<length>";
+    initial-value: 0px;
+    inherits: true;
+}
+
+@layer knowledge-theme {
+    :root {
+        --kb-hue: 252deg;
+        --kb-accent-chroma: 0.16;
+        --kb-grid-size: 2rem;
+        --kb-radius-lg: 0px;
+        --kb-radius-md: 0px;
+        --kb-font-body: "IBM Plex Mono";
+        --kb-font-display: "Bangers";
+        --sl-font: var(--kb-font-body);
+        --sl-font-mono: var(--kb-font-body);
+        --sl-content-width: 52rem;
+        --sl-sidebar-width: 19.5rem;
+        --sl-text-5xl: 3.75rem;
+        --sl-color-accent-low: oklch(0.28 0.07 var(--kb-hue));
+        --sl-color-accent: oklch(0.73 var(--kb-accent-chroma) var(--kb-hue));
+        --sl-color-accent-high: oklch(0.93 0.05 var(--kb-hue));
+        --sl-color-white: oklch(0.97 0.01 var(--kb-hue));
+        --sl-color-gray-1: oklch(0.92 0.015 var(--kb-hue));
+        --sl-color-gray-2: oklch(0.79 0.018 var(--kb-hue));
+        --sl-color-gray-3: oklch(0.64 0.025 var(--kb-hue));
+        --sl-color-gray-4: oklch(0.48 0.03 var(--kb-hue));
+        --sl-color-gray-5: oklch(0.32 0.032 var(--kb-hue));
+        --sl-color-gray-6: oklch(0.22 0.026 var(--kb-hue));
+        --sl-color-black: oklch(0.16 0.02 var(--kb-hue));
+        --sl-shadow-sm: 0 10px 28px rgb(2 6 23 / 0.22);
+        --sl-shadow-md: 0 18px 44px rgb(2 6 23 / 0.3);
+        --sl-shadow-lg: 0 28px 80px rgb(2 6 23 / 0.38);
+        --kb-surface-1: color-mix(in oklch,
+                var(--sl-color-black) 88%,
+                var(--sl-color-accent) 12%);
+        --kb-surface-2: color-mix(in oklch,
+                var(--sl-color-black) 94%,
+                var(--sl-color-gray-5) 6%);
+        --kb-panel-border: color-mix(in oklch,
+                var(--sl-color-accent) 28%,
+                var(--sl-color-gray-5));
+        --kb-grid-line: color-mix(in oklch, var(--sl-color-white) 7%, transparent);
+
+        &[data-theme="light"] {
+            --sl-color-accent-low: oklch(0.92 0.04 var(--kb-hue));
+            --sl-color-accent: oklch(0.56 0.18 var(--kb-hue));
+            --sl-color-accent-high: oklch(0.29 0.08 var(--kb-hue));
+            --sl-color-white: oklch(0.24 0.03 var(--kb-hue));
+            --sl-color-gray-1: oklch(0.29 0.02 var(--kb-hue));
+            --sl-color-gray-2: oklch(0.41 0.022 var(--kb-hue));
+            --sl-color-gray-3: oklch(0.58 0.024 var(--kb-hue));
+            --sl-color-gray-4: oklch(0.74 0.02 var(--kb-hue));
+            --sl-color-gray-5: oklch(0.86 0.016 var(--kb-hue));
+            --sl-color-gray-6: oklch(0.94 0.012 var(--kb-hue));
+            --sl-color-gray-7: oklch(0.98 0.008 var(--kb-hue));
+            --sl-color-black: oklch(0.99 0.006 var(--kb-hue));
+            --sl-shadow-sm: 0 10px 24px rgb(15 23 42 / 0.08);
+            --sl-shadow-md: 0 18px 40px rgb(15 23 42 / 0.1);
+            --sl-shadow-lg: 0 26px 64px rgb(15 23 42 / 0.14);
+            --kb-surface-1: color-mix(in oklch,
+                    var(--sl-color-black) 92%,
+                    var(--sl-color-accent) 8%);
+            --kb-surface-2: color-mix(in oklch,
+                    var(--sl-color-black) 97%,
+                    var(--sl-color-gray-6) 3%);
+            --kb-panel-border: color-mix(in oklch,
+                    var(--sl-color-accent) 24%,
+                    var(--sl-color-gray-5));
+            --kb-grid-line: color-mix(in oklch,
+                    var(--sl-color-gray-3) 14%,
+                    transparent);
+        }
+    }
+
+    html {
+        background:
+            radial-gradient(circle at top left,
+                color-mix(in oklch, var(--sl-color-accent) 18%, transparent),
+                transparent 32%),
+            radial-gradient(circle at top right,
+                color-mix(in oklch, oklch(0.78 0.15 160deg) 12%, transparent),
+                transparent 28%),
+            var(--sl-color-black);
+    }
+
+    body {
+        background:
+            linear-gradient(180deg,
+                color-mix(in oklch, var(--sl-color-black) 94%, transparent),
+                transparent 16rem),
+            linear-gradient(90deg, var(--kb-grid-line) 1px, transparent 1px),
+            linear-gradient(var(--kb-grid-line) 1px, transparent 1px), transparent;
+        background-size:
+            auto,
+            var(--kb-grid-size) var(--kb-grid-size),
+            var(--kb-grid-size) var(--kb-grid-size),
+            auto;
+        background-position:
+            0 0,
+            center top,
+            center top,
+            0 0;
+    }
+
+    :where(.header, .hero, .card-grid, .card, .live-feed) {
+        container-type: inline-size;
+    }
+
+    .header {
+        background: color-mix(in oklch, var(--sl-color-black) 82%, transparent);
+        backdrop-filter: blur(16px);
+        box-shadow: 0 1px 0 color-mix(in oklch, var(--sl-color-white) 10%, transparent);
+        container-name: site-header;
+
+        :root[data-theme="light"] & {
+            background: color-mix(in oklch, var(--sl-color-black) 88%, transparent);
+        }
+
+        &::after {
+            content: "";
+            position: absolute;
+            inset-inline: 0;
+            inset-block-end: 0;
+            block-size: 1px;
+            background: linear-gradient(90deg,
+                    transparent,
+                    color-mix(in oklch, var(--sl-color-accent) 45%, transparent),
+                    transparent);
+        }
+    }
+
+    .site-title {
+        gap: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.015em;
+
+        &:not(:has(img))::before {
+            content: "";
+            inline-size: 0.7rem;
+            block-size: 0.7rem;
+            border-radius: 0;
+            flex: none;
+            background: linear-gradient(135deg,
+                    var(--sl-color-accent),
+                    oklch(0.78 0.15 160deg));
+            box-shadow: 0 0 0 0.3rem color-mix(in oklch, var(--sl-color-accent) 18%, transparent);
+        }
+
+        img {
+            inline-size: clamp(2.4rem, 4vw, 3rem);
+            block-size: clamp(2.4rem, 4vw, 3rem);
+            object-fit: contain;
+            border-radius: 0;
+            filter: drop-shadow(0 0 0.7rem color-mix(in oklch, var(--sl-color-accent) 28%, transparent)) drop-shadow(0 0 1.4rem color-mix(in oklch, oklch(0.78 0.15 160deg) 18%, transparent));
+        }
+    }
+
+    :where([data-page-title],
+        .content-panel > .sl-container > h1#_top,
+        .sl-markdown-content .sl-heading-wrapper.level-h1 > h1) {
+        font-family: var(--kb-font-display), var(--__sl-font);
+        font-weight: 400;
+        letter-spacing: 0.035em;
+        line-height: 0.95;
+        text-wrap: balance;
+    }
+
+    .hero [data-page-title] {
+        text-shadow: 0.06em 0.06em 0 color-mix(in oklch, var(--sl-color-accent) 18%, transparent);
+    }
+
+    @container site-header (width < 42rem) {
+        .site-title {
+            font-size: var(--sl-text-xl);
+        }
+
+        .site-title:not(:has(img))::before {
+            inline-size: 0.6rem;
+            block-size: 0.6rem;
+        }
+    }
+
+    .sidebar-pane {
+        background:
+            linear-gradient(180deg,
+                color-mix(in oklch, var(--sl-color-black) 94%, transparent),
+                transparent 10rem),
+            var(--kb-surface-2);
+    }
+
+    .content-panel,
+    .right-sidebar-panel {
+        background: color-mix(in oklch, var(--sl-color-black) 92%, transparent);
+
+        :root[data-theme="light"] & {
+            background: color-mix(in oklch, var(--sl-color-black) 96%, transparent);
+        }
+    }
+
+    .hero {
+        container-name: hero;
+        position: relative;
+        isolation: isolate;
+        gap: clamp(1.5rem, 4vw, 3rem);
+
+        &::before {
+            content: "";
+            position: absolute;
+            inset: -1.25rem;
+            border: 1px solid var(--kb-panel-border);
+            border-radius: var(--kb-radius-lg);
+            background:
+                linear-gradient(135deg,
+                    color-mix(in oklch, var(--sl-color-accent-low) 70%, transparent),
+                    transparent 55%),
+                linear-gradient(180deg,
+                    color-mix(in oklch, var(--sl-color-black) 85%, transparent),
+                    color-mix(in oklch, var(--sl-color-black) 96%, transparent));
+            box-shadow: var(--sl-shadow-lg);
+            z-index: -1;
+        }
+
+        > :is(img, .hero-html) {
+            filter: drop-shadow(0 24px 54px rgb(15 23 42 / 0.28));
+        }
+
+        >.hero-html {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ks-home-hero-logo {
+            display: block;
+            inline-size: 100%;
+            max-inline-size: 25rem;
+            block-size: auto;
+            object-fit: contain;
+        }
+
+        .tagline {
+            max-inline-size: 38rem;
+        }
+
+        .actions {
+            :where(a) {
+                border-radius: 0;
+                box-shadow: var(--sl-shadow-sm);
+            }
+        }
+
+        @container hero (width < 48rem) {
+            &::before {
+                inset: -0.75rem;
+                border-radius: 0;
+            }
+
+            .actions {
+                inline-size: 100%;
+
+                :where(a) {
+                    flex: 1 1 100%;
+                    justify-content: center;
+                }
+            }
+        }
+    }
+
+    .card-grid {
+        container-name: knowledge-grid;
+    }
+
+    .card {
+        --kb-card-accent: var(--sl-color-accent);
+        container-name: knowledge-card;
+        position: relative;
+        overflow: hidden;
+        border-color: color-mix(in oklch,
+                var(--kb-card-accent) 28%,
+                var(--sl-color-gray-5));
+        background: linear-gradient(180deg,
+                color-mix(in oklch, var(--sl-color-black) 88%, var(--kb-card-accent) 12%),
+                color-mix(in oklch, var(--sl-color-black) 97%, transparent));
+        box-shadow: var(--sl-shadow-sm);
+
+        &:nth-child(3n + 2) {
+            --kb-card-accent: oklch(0.78 0.15 160deg);
+        }
+
+        &:nth-child(3n) {
+            --kb-card-accent: oklch(0.8 0.15 84deg);
+        }
+
+        &::after {
+            content: "";
+            position: absolute;
+            inset: auto -1.25rem -1.75rem auto;
+            inline-size: 7rem;
+            block-size: 7rem;
+            border-radius: 0;
+            background: radial-gradient(circle,
+                    color-mix(in oklch, var(--kb-card-accent) 26%, transparent),
+                    transparent 68%);
+            pointer-events: none;
+        }
+
+        .icon {
+            box-shadow: inset 0 1px 0 color-mix(in oklch, var(--sl-color-white) 14%, transparent);
+        }
+
+        .title {
+            text-wrap: balance;
+        }
+
+        @container knowledge-card (width > 18rem) {
+            .title {
+                font-size: clamp(var(--sl-text-lg),
+                        0.95rem + 1.2cqi,
+                        var(--sl-text-2xl));
+            }
+
+            .body {
+                font-size: clamp(var(--sl-text-sm),
+                        0.8rem + 0.6cqi,
+                        var(--sl-text-base));
+            }
+        }
+    }
+
+    .sl-markdown-content {
+        :is(h1, h2, h3) {
+            letter-spacing: -0.02em;
+            text-wrap: balance;
+        }
+
+        code:not(:where(pre code, .not-content *)) {
+            border: 1px solid color-mix(in oklch, var(--sl-color-accent) 22%, var(--sl-color-gray-5));
+            border-radius: 0;
+            background: color-mix(in oklch,
+                    var(--sl-color-black) 82%,
+                    var(--sl-color-accent-low) 18%);
+            padding-inline: 0.35rem;
+        }
+
+        :is(blockquote, details:not(:where(.not-content *))) {
+            border-radius: var(--kb-radius-md);
+            border-color: var(--kb-panel-border);
+            background: color-mix(in oklch,
+                    var(--sl-color-black) 94%,
+                    var(--sl-color-accent-low) 6%);
+            box-shadow: var(--sl-shadow-sm);
+
+            summary {
+                font-weight: 600;
+            }
+        }
+
+        table:not(:where(.not-content *)) {
+            overflow: clip;
+            border-radius: var(--kb-radius-md);
+            box-shadow: var(--sl-shadow-sm);
+
+            :is(th, td):not(:where(.not-content *)) {
+                backdrop-filter: blur(8px);
+            }
+        }
+    }
+
+    .pagination-links {
+        a {
+            border-radius: var(--kb-radius-md);
+            box-shadow: var(--sl-shadow-sm);
+        }
+    }
+
+    .live-feed {
+        container: live-feed / inline-size;
+        box-shadow: var(--sl-shadow-md);
+        border-color: var(--kb-panel-border);
+        background: linear-gradient(180deg,
+                color-mix(in oklch,
+                    var(--sl-color-black) 90%,
+                    var(--sl-color-accent-low) 10%),
+                color-mix(in oklch, var(--sl-color-black) 98%, transparent));
+
+        .live-feed__item,
+        .live-feed__refresh {
+            box-shadow: var(--sl-shadow-sm);
+        }
+
+        .live-feed__meta {
+            gap: 0.75rem;
+        }
+
+        .live-feed__status {
+            letter-spacing: 0.02em;
+        }
+
+        @container live-feed (width < 34rem) {
+
+            .live-feed__header,
+            .live-feed__controls,
+            .live-feed__actions {
+                display: flex;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .live-feed__actions {
+                gap: 0.5rem;
+
+                .live-feed__refresh {
+                    inline-size: 100%;
+                    justify-content: center;
+                }
+            }
+
+            .live-feed__meta {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.35rem;
+            }
+        }
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--sl-color-accent);
+        outline-offset: 0.2rem;
+    }
+}

@@ -2,7 +2,7 @@
 	"name": "doc-agent",
 	"private": true,
 	"type": "module",
-	"workspaces": ["agents/*"],
+	"workspaces": ["agents/*", "packages/*"],
 	"scripts": {
 		"check": "biome check --write .",
 		"lint": "biome lint .",
