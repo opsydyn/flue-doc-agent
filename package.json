@@ -1,0 +1,25 @@
+{
+	"name": "doc-agent",
+	"private": true,
+	"type": "module",
+	"workspaces": ["agents/*"],
+	"scripts": {
+		"check": "biome check --write .",
+		"lint": "biome lint .",
+		"format": "biome format --write .",
+		"knip": "knip",
+		"typecheck": "tsgo --noEmit"
+	},
+	"dependencies": {
+		"effect": "beta"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.0.0",
+		"@catenarycloud/linteffect": "0.0.4-1",
+		"@effect/language-service": "^0.85.1",
+		"@types/bun": "latest",
+		"bun-types": "latest",
+		"@typescript/native-preview": "latest",
+		"knip": "^6.9.0"
+	}
+}

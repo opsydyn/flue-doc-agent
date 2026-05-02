@@ -1,0 +1,17 @@
+{
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"lib": ["ESNext"],
+		"strict": true,
+		"exactOptionalPropertyTypes": true,
+		"noUncheckedIndexedAccess": true,
+		"skipLibCheck": true,
+		"verbatimModuleSyntax": true,
+		"plugins": [
+			{ "name": "@effect/language-service" }
+		]
+	},
+	"include": ["agents/*/src/**/*", "agents/*/.flue/**/*"]
+}

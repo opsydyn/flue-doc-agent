@@ -1,0 +1,16 @@
+{
+	"name": "@doc-agent/doc-freshness",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"test": "bun test ./src/__tests__/*.test.ts",
+		"test:property": "bun test ./src/__tests__/*.property.ts",
+		"test:all": "bun test ./src/__tests__/*.test.ts ./src/__tests__/*.property.ts",
+		"typecheck": "tsgo --noEmit"
+	},
+	"dependencies": {
+		"@flue/sdk": "^0.3.6",
+		"effect": "beta",
+		"valibot": "^1.0.0"
+	}
+}
