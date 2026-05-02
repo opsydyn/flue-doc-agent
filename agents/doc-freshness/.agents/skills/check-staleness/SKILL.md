@@ -7,8 +7,8 @@ Perform a full documentation freshness audit for the repository at `{{repoPath}}
 
 ## Step 1 — Find all markdown files
 
-Use `glob` to find all files matching `{{glob}}` under `{{repoPath}}`. Ignore files inside
-`node_modules/`, `dist/`, and `.git/`.
+Use `glob` to find all files matching `{{repoPath}}/{{glob}}`. Ignore any paths containing
+`node_modules/`, `dist/`, or `.git/`.
 
 ## Step 2 — For each markdown file
 

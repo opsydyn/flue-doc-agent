@@ -115,6 +115,7 @@ jobs:
             --argjson signals '${{ steps.signals.outputs.signals }}' \
             '{repoPath:$repoPath,glob:$glob,signals:$signals}')
           RESULT=$(flue run doc-freshness --target node \
-            --id "freshness-${{ github.run_id }}" --payload "$PAYLOAD")
+            --id "freshness-${{ github.run_id }}" --payload "$PAYLOAD" \
+            | awk '/---RESULT_START---/{p=1;next}/---RESULT_END---/{p=0}p')
           jq -r '.report' <<< "$RESULT" >> "$GITHUB_STEP_SUMMARY"
           jq -e '.shouldFail | not' <<< "$RESULT" > /dev/null
