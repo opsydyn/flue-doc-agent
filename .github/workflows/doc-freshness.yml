@@ -112,9 +112,19 @@ jobs:
           ODS_API_KEY: ${{ secrets.ODS_API_KEY }}
           ODS_SITE_ID: ${{ vars.ODS_SITE_ID }}
         run: |
-          RESULT=$(flue run doc-freshness --target node \
+          extract_last_json() {
+            node -e 'const fs = require("fs"); const input = fs.readFileSync(0, "utf8"); let last; for (let start = input.indexOf("{"); start !== -1; start = input.indexOf("{", start + 1)) { let depth = 0; let inString = false; let escape = false; for (let end = start; end < input.length; end++) { const char = input[end]; if (inString) { if (escape) escape = false; else if (char === "\\") escape = true; else if (char === "\"") inString = false; continue; } if (char === "\"") inString = true; else if (char === "{") depth++; else if (char === "}") { depth--; if (depth === 0) { const candidate = input.slice(start, end + 1); try { last = JSON.parse(candidate); } catch {} break; } } } } if (!last) { console.error(input); process.exit(1); } process.stdout.write(JSON.stringify(last));'
+          }
+
+          set +e
+          RAW_OUTPUT=$(flue run doc-freshness --target node \
             --id "analytics-${{ github.run_id }}" \
-            --payload '{"mode":"analytics"}')
+            --payload '{"mode":"analytics"}' 2>&1)
+          FLUE_EXIT=$?
+          set -e
+          printf '%s\n' "$RAW_OUTPUT"
+          if [ "$FLUE_EXIT" -ne 0 ]; then exit "$FLUE_EXIT"; fi
+          RESULT=$(printf '%s' "$RAW_OUTPUT" | extract_last_json)
           jq -r '.report' <<< "$RESULT" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run doc-freshness agent
@@ -122,6 +132,10 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
+          extract_last_json() {
+            node -e 'const fs = require("fs"); const input = fs.readFileSync(0, "utf8"); let last; for (let start = input.indexOf("{"); start !== -1; start = input.indexOf("{", start + 1)) { let depth = 0; let inString = false; let escape = false; for (let end = start; end < input.length; end++) { const char = input[end]; if (inString) { if (escape) escape = false; else if (char === "\\") escape = true; else if (char === "\"") inString = false; continue; } if (char === "\"") inString = true; else if (char === "{") depth++; else if (char === "}") { depth--; if (depth === 0) { const candidate = input.slice(start, end + 1); try { last = JSON.parse(candidate); } catch {} break; } } } } if (!last) { console.error(input); process.exit(1); } process.stdout.write(JSON.stringify(last));'
+          }
+
           DOC_GLOB="${{ github.event.inputs.glob || 'packages/docs/src/content/docs/**/*.md' }}"
           case "$DOC_GLOB" in
             /*) SCAN_GLOB="$DOC_GLOB" ;;
@@ -133,7 +147,13 @@ jobs:
             --arg glob "$SCAN_GLOB" \
             --argjson signals '${{ steps.signals.outputs.signals }}' \
             '{repoPath:$repoPath,glob:$glob,signals:$signals}')
-          RESULT=$(flue run doc-freshness --target node \
-            --id "freshness-${{ github.run_id }}" --payload "$PAYLOAD")
+          set +e
+          RAW_OUTPUT=$(flue run doc-freshness --target node \
+            --id "freshness-${{ github.run_id }}" --payload "$PAYLOAD" 2>&1)
+          FLUE_EXIT=$?
+          set -e
+          printf '%s\n' "$RAW_OUTPUT"
+          if [ "$FLUE_EXIT" -ne 0 ]; then exit "$FLUE_EXIT"; fi
+          RESULT=$(printf '%s' "$RAW_OUTPUT" | extract_last_json)
           jq -r '.report' <<< "$RESULT" >> "$GITHUB_STEP_SUMMARY"
           jq -e '.shouldFail | not' <<< "$RESULT" > /dev/null

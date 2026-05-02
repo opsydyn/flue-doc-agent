@@ -218,28 +218,106 @@ const freshnessSchema = v.object({
 	shouldFail: v.boolean(),
 });
 
-const analyticsSchema = v.object({
-	report: v.string(),
-	pageCount: v.number(),
-	totalViews: v.number(),
+const analyticsResultSchema = Schema.Struct({
+	report: Schema.String,
+	pageCount: Schema.Number.check(Schema.isInt(), Schema.isGreaterThanOrEqualTo(0)),
+	totalViews: pageViewsSchema,
 });
+
+const makeAnalyticsUnavailable = (error: string) =>
+	analyticsResultSchema.make({
+		report: `## One Dollar Stats — 30d Page Views\n\n> ODS not configured: ${error}`,
+		pageCount: 0,
+		totalViews: 0,
+	});
+
+const makeAnalyticsResult = Effect.gen(function* () {
+	const apiKey = yield* requireAnalyticsConfig(process.env.ODS_API_KEY, "ODS_API_KEY");
+	const siteId = yield* requireAnalyticsConfig(process.env.ODS_SITE_ID, "ODS_SITE_ID");
+	const ods = yield* OdsClient;
+	const data = yield* ods.fetchPageviews(apiKey, siteId);
+	const pageviews = yield* Schema.decodeUnknownEffect(odsPageviewsSchema)(data);
+	const rows = pageviews.results.toSorted(
+		(left, right) => (right.metrics[0] ?? 0) - (left.metrics[0] ?? 0),
+	);
+	const totalViews = pageViewsSchema.make(
+		rows.reduce((total, row) => total + (row.metrics[0] ?? 0), 0),
+	);
+	const tableRows = rows.map(
+		(row) => `| ${row.dimensions[0] ?? "(unknown)"} | ${row.metrics[0] ?? 0} |`,
+	);
+	const report = [
+		"## One Dollar Stats — 30d Page Views",
+		"",
+		"| Page | Views |",
+		"| --- | --- |",
+		...tableRows,
+		"",
+		`**Total: ${totalViews} views across ${rows.length} pages**`,
+	].join("\n");
+
+	return analyticsResultSchema.make({
+		report,
+		pageCount: rows.length,
+		totalViews,
+	});
+}).pipe(
+	Effect.catchTag("MissingAnalyticsConfig", () =>
+		Effect.succeed(makeAnalyticsUnavailable("ODS_API_KEY or ODS_SITE_ID not configured")),
+	),
+	Effect.catchTag("OdsClientError", (e) =>
+		Effect.succeed(makeAnalyticsUnavailable(String(e.cause))),
+	),
+	Effect.catchTag("SchemaError", (e) => Effect.succeed(makeAnalyticsUnavailable(String(e)))),
+	Effect.provide(OdsClientDefault),
+);
 
 const checkStalenessArgsSchema = Schema.Struct({
 	repoPath: Schema.String,
 	glob: Schema.String,
+	globPath: Schema.String,
+	globPattern: Schema.String,
 	pageviews: Schema.String,
 	repoTraffic: Schema.String,
 	pageviewThreshold: Schema.String,
 });
+
+const splitGlobForFlue = (glob: string) => {
+	const recursiveGlobIndex = glob.indexOf("/**/");
+	const lastSlashIndex = glob.lastIndexOf("/");
+
+	return Match.value({ recursiveGlobIndex, lastSlashIndex }).pipe(
+		Match.when(
+			(input) => input.recursiveGlobIndex >= 0,
+			(input) =>
+				({
+					globPath: glob.slice(0, input.recursiveGlobIndex),
+					globPattern: glob.slice(input.recursiveGlobIndex + "/**/".length),
+				}) as const,
+		),
+		Match.when(
+			(input) => input.lastSlashIndex >= 0,
+			(input) =>
+				({
+					globPath: glob.slice(0, input.lastSlashIndex),
+					globPattern: glob.slice(input.lastSlashIndex + 1),
+				}) as const,
+		),
+		Match.orElse(() => ({ globPath: ".", globPattern: glob }) as const),
+	);
+};
 
 const makeCheckStalenessArgs = (
 	repoPath: string,
 	glob: string,
 	signals: Option.Option<Signals>,
 ) => {
+	const { globPath, globPattern } = splitGlobForFlue(glob);
 	const defaultArgs = checkStalenessArgsSchema.make({
 		repoPath,
 		glob,
+		globPath,
+		globPattern,
 		pageviews: encodeNullableSignalMap(null),
 		repoTraffic: encodeNullableSignalMap(null),
 		pageviewThreshold: encodePageviewThreshold(defaultPageviewThreshold),
@@ -266,6 +344,8 @@ const makeCheckStalenessArgs = (
 export default async function ({ init, payload }: FlueContext) {
 	const mode = (payload.mode as string | undefined) ?? "check-staleness";
 
+	if (mode === "analytics") return await Effect.runPromise(makeAnalyticsResult);
+
 	const agent = await init({
 		sandbox: "local",
 		model: "openai/gpt-4o",
@@ -281,7 +361,6 @@ export default async function ({ init, payload }: FlueContext) {
 	const checkStalenessArgs = makeCheckStalenessArgs(repoPath, glob, signals);
 
 	return await Match.value(mode).pipe(
-		Match.when("analytics", () => session.skill("analytics-report", { result: analyticsSchema })),
 		Match.orElse(() =>
 			session.skill("check-staleness", {
 				args: checkStalenessArgs,

@@ -7,9 +7,9 @@ Perform a full documentation freshness audit for the repository at `{{repoPath}}
 
 ## Step 1 — Find all markdown files
 
-Use `glob` to find all files matching `{{glob}}`. The `glob` argument is already resolved to
-an absolute pattern rooted at `{{repoPath}}` when the agent runs in CI. Ignore any paths
-containing `node_modules/`, `dist/`, or `.git/`.
+Use `glob` with `path: "{{globPath}}"` and `pattern: "{{globPattern}}"`. The original glob is
+`{{glob}}`, but Flue's `glob` tool expects a search directory plus a basename pattern, not a
+single path-containing pattern. Ignore any paths containing `node_modules/`, `dist/`, or `.git/`.
 
 When reporting files or passing file paths to `git -C {{repoPath}}`, convert absolute matches
 back to paths relative to `{{repoPath}}`.
