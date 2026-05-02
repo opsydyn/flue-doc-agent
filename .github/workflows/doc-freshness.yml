@@ -41,8 +41,8 @@ jobs:
         id: signals
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ODS_API_KEY: ${{ secrets.ODS_API_KEY }}
-          ODS_SITE_ID: ${{ vars.ODS_SITE_ID }}
+          ODS_API_KEY: ${{ secrets.ONE_DOLLAR_STATS_API_KEY }}
+          ODS_SITE_ID: ${{ secrets.ODS_SITE_ID }}
           PAGEVIEW_THRESHOLD: ${{ github.event.inputs.pageview_threshold || '50' }}
         run: |
           # GitHub Traffic API — top-10 paths, 14-day rolling window
@@ -109,8 +109,8 @@ jobs:
         continue-on-error: true  # non-blocking — passes even if ODS is not yet configured
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          ODS_API_KEY: ${{ secrets.ODS_API_KEY }}
-          ODS_SITE_ID: ${{ vars.ODS_SITE_ID }}
+          ODS_API_KEY: ${{ secrets.ONE_DOLLAR_STATS_API_KEY }}
+          ODS_SITE_ID: ${{ secrets.ODS_SITE_ID }}
         run: |
           extract_last_json() {
             node -e 'const fs = require("fs"); const input = fs.readFileSync(0, "utf8"); let last; for (let start = input.indexOf("{"); start !== -1; start = input.indexOf("{", start + 1)) { let depth = 0; let inString = false; let escape = false; for (let end = start; end < input.length; end++) { const char = input[end]; if (inString) { if (escape) escape = false; else if (char === "\\") escape = true; else if (char === "\"") inString = false; continue; } if (char === "\"") inString = true; else if (char === "{") depth++; else if (char === "}") { depth--; if (depth === 0) { const candidate = input.slice(start, end + 1); try { last = JSON.parse(candidate); } catch {} break; } } } } if (!last) { console.error(input); process.exit(1); } process.stdout.write(JSON.stringify(last));'
