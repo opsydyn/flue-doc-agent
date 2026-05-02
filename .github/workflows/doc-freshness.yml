@@ -109,29 +109,12 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          GLOB="${{ github.event.inputs.glob || 'packages/docs/src/content/docs/**/*.md' }}"
-          SIGNALS='${{ steps.signals.outputs.signals }}'
-
           PAYLOAD=$(jq -n \
             --arg repoPath "$GITHUB_WORKSPACE" \
-            --arg glob "$GLOB" \
-            --argjson signals "$SIGNALS" \
-            '{repoPath: $repoPath, glob: $glob, signals: $signals}')
-
+            --arg glob "${{ github.event.inputs.glob || 'packages/docs/src/content/docs/**/*.md' }}" \
+            --argjson signals '${{ steps.signals.outputs.signals }}' \
+            '{repoPath:$repoPath,glob:$glob,signals:$signals}')
           RESULT=$(flue run doc-freshness --target node \
-            --id "freshness-${{ github.run_id }}" \
-            --payload "$PAYLOAD")
-
-          # Agent writes the report; CI just passes it through
-          echo "$RESULT" | jq -r '.report' >> "$GITHUB_STEP_SUMMARY"
-
-          if [ "$(echo "$RESULT" | jq -r '.shouldFail')" = "true" ]; then
-            CRITICAL=$(echo "$RESULT" | jq -r '.summary.critical')
-            echo "::error::${CRITICAL} critical stale doc(s) found — see job summary"
-            exit 1
-          fi
-
-          STALE=$(echo "$RESULT" | jq -r '.summary.stale // 0')
-          if [ "$STALE" -gt 0 ]; then
-            echo "::warning::${STALE} stale doc(s) found (low demand) — see job summary"
-          fi
+            --id "freshness-${{ github.run_id }}" --payload "$PAYLOAD")
+          jq -r '.report' <<< "$RESULT" >> "$GITHUB_STEP_SUMMARY"
+          jq -e '.shouldFail | not' <<< "$RESULT" > /dev/null
