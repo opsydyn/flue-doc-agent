@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'packages/docs/**'
+      - '.github/workflows/deploy-docs.yml'
   workflow_dispatch:
 
 permissions:
