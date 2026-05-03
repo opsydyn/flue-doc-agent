@@ -1,6 +1,12 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import type { Dirent } from "node:fs";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { Match, Option, Record, Schema } from "effect";
+import {
+	type StarlightRouteMap,
+	sourcePathForPage,
+	starlightRouteMap,
+} from "../src/StarlightRoutes";
 
 type OdsRow = {
 	readonly dimensions: ReadonlyArray<string>;
@@ -77,6 +83,36 @@ const args = process.argv.slice(2).reduce<Record.ReadonlyRecord<string, string>>
 const argValue = (key: string, fallback: string) =>
 	Option.getOrElse(Record.get(args, key), () => fallback);
 
+const markdownExtensions: ReadonlyArray<string> = [".md", ".mdx"];
+
+const matchedMarkdownFile = (filePath: string, isMatch: boolean) =>
+	Match.value(isMatch).pipe(
+		Match.when(true, () => [filePath]),
+		Match.orElse(() => []),
+	);
+
+const listMarkdownEntry = (directory: string, entry: Dirent<string>) => {
+	const filePath = path.join(directory, entry.name);
+
+	return Match.value(entry.isDirectory()).pipe(
+		Match.when(true, () => listMarkdownFiles(filePath)),
+		Match.orElse(() =>
+			Promise.resolve(
+				matchedMarkdownFile(
+					filePath,
+					markdownExtensions.some((extension) => entry.name.endsWith(extension)),
+				),
+			),
+		),
+	);
+};
+
+const listMarkdownFiles = async (directory: string): Promise<ReadonlyArray<string>> =>
+	readdir(directory, { withFileTypes: true })
+		.then((entries) => Promise.all(entries.map((entry) => listMarkdownEntry(directory, entry))))
+		.then((groups) => groups.flat())
+		.catch(() => []);
+
 const readOdsJson = async (filePath: string) =>
 	readFile(filePath, "utf8")
 		.then((content) =>
@@ -148,6 +184,7 @@ ${tableRows.join("\n") || "| No page views returned | 0 |"}
 const freshnessMarkdown = (
 	freshness: FreshnessResult,
 	pageviewRows: ReadonlyArray<PageviewRow>,
+	routes: StarlightRouteMap,
 ) => {
 	const files = freshness.files;
 	const summary = freshness.summary;
@@ -170,7 +207,7 @@ const freshnessMarkdown = (
 		.map(
 			(row) =>
 				`| ${escapeTableCell(row.page)} | ${row.views.toLocaleString("en-GB")} | ${escapeTableCell(
-					relativePathFromPage(row.page),
+					sourcePathForPage(routes, row.page),
 				)} |`,
 		);
 
@@ -201,7 +238,7 @@ ${attentionRows.join("\n") || "| No stale or warning docs | fresh | low | 0 | No
 
 ## High-Traffic Pages
 
-| Page | Views | Approximate doc slug |
+| Page | Views | Source file |
 | --- | ---: | --- |
 ${popularRows.join("\n") || "| No page views returned | 0 | n/a |"}
 
@@ -211,17 +248,16 @@ ${freshness.report}
 `;
 };
 
-const relativePathFromPage = (page: string) =>
-	page
-		.replace(/^\/flue-doc-agent\/?/, "")
-		.replace(/\/$/, "")
-		.replace(/^$/, "index");
-
 const outDir = argValue("out", "packages/docs/src/content/docs/analytics");
+const docsRoot = argValue("docsRoot", "packages/docs/src/content/docs");
 const ods = await readOdsJson(argValue("ods", "/tmp/ods-pageviews.json"));
 const freshness = await readFreshnessJson(argValue("freshness", "/tmp/freshness-result.json"));
 const pageviewRows = pageviewsFromOds(ods);
+const routes = starlightRouteMap(docsRoot, await listMarkdownFiles(docsRoot));
 
 await mkdir(outDir, { recursive: true });
 await writeFile(path.join(outDir, "pageviews.md"), pageviewsMarkdown(pageviewRows));
-await writeFile(path.join(outDir, "freshness.md"), freshnessMarkdown(freshness, pageviewRows));
+await writeFile(
+	path.join(outDir, "freshness.md"),
+	freshnessMarkdown(freshness, pageviewRows, routes),
+);

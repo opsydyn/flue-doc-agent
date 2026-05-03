@@ -1,5 +1,4 @@
 import { type FlueContext, type ToolDef, Type } from "@flue/sdk/client";
-import matter from "gray-matter";
 import { Octokit } from "@octokit/rest";
 import { Data, Effect, Match, Option, Schema, Struct } from "effect";
 import * as Record from "effect/Record";
@@ -15,6 +14,11 @@ import {
 	githubHistoryResultJsonSchema,
 	makeHistoryUnavailable,
 } from "../../src/GithubHistory";
+import {
+	makeDocUnavailable,
+	parseMarkdownDoc,
+	readDocResultJsonSchema,
+} from "../../src/MarkdownDoc";
 import { OdsClient, OdsClientDefault } from "../../src/OdsClient";
 import { UrlChecker, UrlCheckerDefault } from "../../src/UrlChecker";
 
@@ -34,8 +38,6 @@ const signalsPayloadSchema = v.nullish(
 );
 
 type SignalMapInput = { readonly [key: string]: number };
-type StringMap = { readonly [key: string]: string };
-type FrontmatterData = { readonly [key: string]: unknown };
 type SignalsPayload = NonNullable<v.InferOutput<typeof signalsPayloadSchema>>;
 
 const pageViewsSchema = Schema.Number.check(Schema.isInt(), Schema.isGreaterThanOrEqualTo(0));
@@ -159,57 +161,7 @@ class MissingAnalyticsConfig extends Data.TaggedError("MissingAnalyticsConfig")<
 	readonly variable: "ODS_API_KEY" | "ODS_SITE_ID";
 }> {}
 
-class ReadDocError extends Data.TaggedError("ReadDocError")<{
-	readonly path: string;
-	readonly cause: unknown;
-}> {}
-
-const errorMessage = (cause: unknown) =>
-	Match.value(cause instanceof Error).pipe(
-		Match.when(true, () => (cause as Error).stack ?? (cause as Error).message),
-		Match.orElse(() => String(cause)),
-	);
-
 const githubToken = () => process.env.GH_TOKEN ?? process.env.GITHUB_TOKEN;
-
-const uniqueStrings = (values: ReadonlyArray<string>) =>
-	values.filter((value, index, allValues) => allValues.indexOf(value) === index).sort();
-
-const markdownLinkTargets = (body: string) =>
-	Array.from(body.matchAll(/\[[^\]]*\]\(([^)#?]+)(?:[#?][^)]*)?\)/gu), (match) => match[1] ?? "");
-
-const externalLinksFromBody = (body: string) =>
-	uniqueStrings(markdownLinkTargets(body).filter((target) => /^https?:\/\//u.test(target)));
-
-const internalLinksFromBody = (body: string) =>
-	uniqueStrings(
-		markdownLinkTargets(body).filter(
-			(target) => target.length > 0 && !/^https?:\/\//u.test(target) && !target.startsWith("#"),
-		),
-	);
-
-const codeReferencesFromBody = (body: string) =>
-	uniqueStrings(
-		Array.from(
-			body.matchAll(
-				/(?:^|[\s`'"])((?:src|lib|packages|agents)\/[A-Za-z0-9._/-]+\.(?:astro|cjs|css|js|jsx|json|mjs|ts|tsx|yaml|yml))/gmu,
-			),
-			(match) => match[1] ?? "",
-		).filter((target) => target.length > 0),
-	);
-
-const frontmatterValue = (value: unknown) =>
-	Match.value(typeof value).pipe(
-		Match.when("string", () => value as string),
-		Match.when("number", () => String(value)),
-		Match.when("boolean", () => String(value)),
-		Match.orElse(() => String(value)),
-	);
-
-const frontmatterRecord = (data: FrontmatterData) =>
-	Record.reduce(data, {} as StringMap, (state, value, key) =>
-		Record.set(state, key, frontmatterValue(value)),
-	);
 
 const checkUrlArgsSchema = Schema.Struct({
 	url: Schema.String,
@@ -246,23 +198,6 @@ const readDocArgsSchema = Schema.Struct({
 	repoPath: Schema.String,
 	path: Schema.String,
 });
-const readDocParsedSchema = Schema.Struct({
-	_tag: Schema.Literal("DocRead"),
-	path: Schema.String,
-	frontmatter: Schema.Record(Schema.String, Schema.String),
-	body: Schema.String,
-	internalLinks: Schema.Array(Schema.String),
-	externalLinks: Schema.Array(Schema.String),
-	codeReferences: Schema.Array(Schema.String),
-});
-const readDocUnavailableSchema = Schema.Struct({
-	_tag: Schema.Literal("DocUnavailable"),
-	path: Schema.String,
-	reason: Schema.String,
-});
-const readDocResultJsonSchema = Schema.fromJsonString(
-	Schema.Union([readDocParsedSchema, readDocUnavailableSchema]),
-);
 const encodeReadDocResult = Schema.encodeSync(readDocResultJsonSchema);
 
 const githubHistoryArgsSchema = Schema.Struct({
@@ -278,27 +213,6 @@ const invalidGithubConfig = (
 	reason: string,
 ): ReadonlyArray<GitHubHistoryEntry> =>
 	paths.map((filePath) => makeHistoryUnavailable(filePath, reason));
-
-const makeDocRead = (filePath: string, content: string) => {
-	const parsed = matter(content);
-
-	return readDocParsedSchema.make({
-		_tag: "DocRead",
-		path: filePath,
-		frontmatter: frontmatterRecord(parsed.data),
-		body: parsed.content,
-		internalLinks: internalLinksFromBody(parsed.content),
-		externalLinks: externalLinksFromBody(parsed.content),
-		codeReferences: codeReferencesFromBody(parsed.content),
-	});
-};
-
-const makeDocUnavailable = (filePath: string, cause: unknown) =>
-	readDocUnavailableSchema.make({
-		_tag: "DocUnavailable",
-		path: filePath,
-		reason: errorMessage(cause),
-	});
 
 const githubHistoryTokenIssue = (token: string | undefined) =>
 	Match.value(token === undefined || token.length === 0).pipe(
@@ -359,13 +273,10 @@ const readDoc: ToolDef = {
 				yield* Schema.decodeUnknownEffect(readDocArgsSchema)(args);
 			const fullPath = path.resolve(repoPath, filePath);
 			return yield* Effect.tryPromise({
-				try: () => fs.readFile(fullPath, "utf8").then((content) => makeDocRead(filePath, content)),
-				catch: (cause) => new ReadDocError({ path: filePath, cause }),
-			}).pipe(
-				Effect.catchTag("ReadDocError", (error) =>
-					Effect.succeed(makeDocUnavailable(error.path, error.cause)),
-				),
-			);
+				try: () =>
+					fs.readFile(fullPath, "utf8").then((content) => parseMarkdownDoc(filePath, content)),
+				catch: (cause) => makeDocUnavailable(filePath, cause),
+			});
 		}).pipe(Effect.map(encodeReadDocResult), Effect.runPromise),
 };
 
