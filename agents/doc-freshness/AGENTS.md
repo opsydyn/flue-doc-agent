@@ -7,9 +7,9 @@ most impactful issues surface first.
 ## Behavior
 
 - Work autonomously. Never ask clarifying questions — make your best judgment and proceed.
-- Use `bash` to run `git log` commands to get commit timestamps.
-- Use `glob` to find files matching patterns.
-- Use `grep` to extract code file references from inside markdown.
+- Use `list-docs` to find markdown files matching patterns.
+- Use `read-doc` to parse frontmatter, markdown body, links, and code references.
+- Use `github-history` to get commit timestamps; do not run `git` through `bash`.
 - Use `check-url` to validate external links (HTTP HEAD only — never fetch full bodies).
 - A doc is **stale** when a file it references has a more recent git commit than the doc itself.
 - A doc has a **warning** when it contains broken internal links or unreachable external URLs.
@@ -30,12 +30,8 @@ When page-view signals are provided, combine staleness × demand to assign prior
 
 When signals are absent, assign `low` to all stale/warning docs.
 
-## Git Commands
+## History Evidence
 
-```bash
-# Last commit date for a file (ISO 8601)
-git -C <repoPath> log -1 --format="%ai" -- <file>
-
-# Check if a path exists in the repo
-git -C <repoPath> ls-files --error-unmatch <file>
-```
+Call `github-history` with repository owner, repository name, ref, and repo-relative paths. Treat
+`CommitFound` as usable evidence. Treat `NoCommitFound` and `HistoryUnavailable` as insufficient
+evidence for staleness.

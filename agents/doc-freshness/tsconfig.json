@@ -3,5 +3,5 @@
 	"compilerOptions": {
 		"typeRoots": ["../../node_modules/@types", "../../node_modules", "./node_modules/@types", "./node_modules"]
 	},
-	"include": [".flue/**/*", "src/**/*"]
+	"include": [".flue/**/*", "scripts/**/*", "src/**/*"]
 }

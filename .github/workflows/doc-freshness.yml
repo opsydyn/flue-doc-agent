@@ -40,7 +40,7 @@ jobs:
       - name: Fetch analytics signals
         id: signals
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           ODS_API_KEY: ${{ secrets.ONE_DOLLAR_STATS_API_KEY }}
           ODS_SITE_ID: ${{ secrets.ODS_SITE_ID }}
           PAGEVIEW_THRESHOLD: ${{ github.event.inputs.pageview_threshold || '50' }}
@@ -119,7 +119,7 @@ jobs:
             2> /tmp/analytics.log
           cat /tmp/analytics.log
           cat /tmp/analytics-output.txt
-          node scripts/extract-flue-json.mjs \
+          bun scripts/extract-flue-json.ts \
             --input /tmp/analytics-output.txt \
             --output /tmp/analytics-result.json
           jq -er '.report' /tmp/analytics-result.json >> "$GITHUB_STEP_SUMMARY"
@@ -128,8 +128,11 @@ jobs:
         working-directory: agents/doc-freshness
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           DOC_GLOB="${{ github.event.inputs.glob || 'packages/docs/src/content/docs/**/*.md' }}"
+          OWNER="${GITHUB_REPOSITORY%%/*}"
+          REPO="${GITHUB_REPOSITORY#*/}"
           case "$DOC_GLOB" in
             /*) SCAN_GLOB="$DOC_GLOB" ;;
             *) SCAN_GLOB="$GITHUB_WORKSPACE/$DOC_GLOB" ;;
@@ -138,22 +141,25 @@ jobs:
           PAYLOAD=$(jq -n \
             --arg repoPath "$GITHUB_WORKSPACE" \
             --arg glob "$SCAN_GLOB" \
+            --arg owner "$OWNER" \
+            --arg repo "$REPO" \
+            --arg ref "$GITHUB_SHA" \
             --argjson signals '${{ steps.signals.outputs.signals }}' \
-            '{repoPath:$repoPath,glob:$glob,signals:$signals}')
+            '{repoPath:$repoPath,glob:$glob,owner:$owner,repo:$repo,ref:$ref,signals:$signals}')
           flue run doc-freshness --target node \
             --id "freshness-${{ github.run_id }}" --payload "$PAYLOAD" \
             > /tmp/freshness-output.txt \
             2> /tmp/freshness.log
           cat /tmp/freshness.log
           cat /tmp/freshness-output.txt
-          node scripts/extract-flue-json.mjs \
+          bun scripts/extract-flue-json.ts \
             --input /tmp/freshness-output.txt \
             --output /tmp/freshness-result.json
           jq -er '.report' /tmp/freshness-result.json >> "$GITHUB_STEP_SUMMARY"
 
       - name: Generate Starlight freshness pages
         run: |
-          node agents/doc-freshness/scripts/write-starlight-reports.mjs \
+          bun agents/doc-freshness/scripts/write-starlight-reports.ts \
             --ods /tmp/ods-pageviews.json \
             --freshness /tmp/freshness-result.json \
             --out packages/docs/src/content/docs/analytics

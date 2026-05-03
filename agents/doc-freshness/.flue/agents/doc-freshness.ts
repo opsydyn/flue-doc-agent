@@ -1,4 +1,6 @@
 import { type FlueContext, type ToolDef, Type } from "@flue/sdk/client";
+import matter from "gray-matter";
+import { Octokit } from "@octokit/rest";
 import { Data, Effect, Match, Option, Schema, Struct } from "effect";
 import * as Record from "effect/Record";
 import type { Dirent } from "node:fs";
@@ -6,6 +8,13 @@ import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import * as v from "valibot";
 import { httpUrl } from "../../src/Domain";
+import {
+	fetchGithubHistoryEntries,
+	type GitHubHistoryClient,
+	type GitHubHistoryEntry,
+	githubHistoryResultJsonSchema,
+	makeHistoryUnavailable,
+} from "../../src/GithubHistory";
 import { OdsClient, OdsClientDefault } from "../../src/OdsClient";
 import { UrlChecker, UrlCheckerDefault } from "../../src/UrlChecker";
 
@@ -25,16 +34,12 @@ const signalsPayloadSchema = v.nullish(
 );
 
 type SignalMapInput = { readonly [key: string]: number };
+type StringMap = { readonly [key: string]: string };
+type FrontmatterData = { readonly [key: string]: unknown };
 type SignalsPayload = NonNullable<v.InferOutput<typeof signalsPayloadSchema>>;
 
-const pageViewsSchema = Schema.Number.check(
-	Schema.isInt(),
-	Schema.isGreaterThanOrEqualTo(0),
-);
-const pageviewThresholdSchema = Schema.Number.check(
-	Schema.isInt(),
-	Schema.isGreaterThan(0),
-);
+const pageViewsSchema = Schema.Number.check(Schema.isInt(), Schema.isGreaterThanOrEqualTo(0));
+const pageviewThresholdSchema = Schema.Number.check(Schema.isInt(), Schema.isGreaterThan(0));
 const signalMapSchema = Schema.Record(Schema.String, pageViewsSchema);
 const signalsSchema = Schema.Struct({
 	pageviews: signalMapSchema,
@@ -137,9 +142,7 @@ const listMarkdownFiles = async (
 	fs
 		.readdir(directory, { withFileTypes: true })
 		.then((entries) =>
-			Promise.all(
-				entries.map((entry) => listMarkdownEntry(directory, extensions, entry)),
-			),
+			Promise.all(entries.map((entry) => listMarkdownEntry(directory, extensions, entry))),
 		)
 		.then((groups) => groups.flat())
 		.catch(() => []);
@@ -155,6 +158,58 @@ class InvalidToolUrl extends Data.TaggedError("InvalidToolUrl")<{
 class MissingAnalyticsConfig extends Data.TaggedError("MissingAnalyticsConfig")<{
 	readonly variable: "ODS_API_KEY" | "ODS_SITE_ID";
 }> {}
+
+class ReadDocError extends Data.TaggedError("ReadDocError")<{
+	readonly path: string;
+	readonly cause: unknown;
+}> {}
+
+const errorMessage = (cause: unknown) =>
+	Match.value(cause instanceof Error).pipe(
+		Match.when(true, () => (cause as Error).stack ?? (cause as Error).message),
+		Match.orElse(() => String(cause)),
+	);
+
+const githubToken = () => process.env.GH_TOKEN ?? process.env.GITHUB_TOKEN;
+
+const uniqueStrings = (values: ReadonlyArray<string>) =>
+	values.filter((value, index, allValues) => allValues.indexOf(value) === index).sort();
+
+const markdownLinkTargets = (body: string) =>
+	Array.from(body.matchAll(/\[[^\]]*\]\(([^)#?]+)(?:[#?][^)]*)?\)/gu), (match) => match[1] ?? "");
+
+const externalLinksFromBody = (body: string) =>
+	uniqueStrings(markdownLinkTargets(body).filter((target) => /^https?:\/\//u.test(target)));
+
+const internalLinksFromBody = (body: string) =>
+	uniqueStrings(
+		markdownLinkTargets(body).filter(
+			(target) => target.length > 0 && !/^https?:\/\//u.test(target) && !target.startsWith("#"),
+		),
+	);
+
+const codeReferencesFromBody = (body: string) =>
+	uniqueStrings(
+		Array.from(
+			body.matchAll(
+				/(?:^|[\s`'"])((?:src|lib|packages|agents)\/[A-Za-z0-9._/-]+\.(?:astro|cjs|css|js|jsx|json|mjs|ts|tsx|yaml|yml))/gmu,
+			),
+			(match) => match[1] ?? "",
+		).filter((target) => target.length > 0),
+	);
+
+const frontmatterValue = (value: unknown) =>
+	Match.value(typeof value).pipe(
+		Match.when("string", () => value as string),
+		Match.when("number", () => String(value)),
+		Match.when("boolean", () => String(value)),
+		Match.orElse(() => String(value)),
+	);
+
+const frontmatterRecord = (data: FrontmatterData) =>
+	Record.reduce(data, {} as StringMap, (state, value, key) =>
+		Record.set(state, key, frontmatterValue(value)),
+	);
 
 const checkUrlArgsSchema = Schema.Struct({
 	url: Schema.String,
@@ -187,6 +242,86 @@ const listDocsResultJsonSchema = Schema.fromJsonString(
 );
 const encodeListDocsResult = Schema.encodeSync(listDocsResultJsonSchema);
 
+const readDocArgsSchema = Schema.Struct({
+	repoPath: Schema.String,
+	path: Schema.String,
+});
+const readDocParsedSchema = Schema.Struct({
+	_tag: Schema.Literal("DocRead"),
+	path: Schema.String,
+	frontmatter: Schema.Record(Schema.String, Schema.String),
+	body: Schema.String,
+	internalLinks: Schema.Array(Schema.String),
+	externalLinks: Schema.Array(Schema.String),
+	codeReferences: Schema.Array(Schema.String),
+});
+const readDocUnavailableSchema = Schema.Struct({
+	_tag: Schema.Literal("DocUnavailable"),
+	path: Schema.String,
+	reason: Schema.String,
+});
+const readDocResultJsonSchema = Schema.fromJsonString(
+	Schema.Union([readDocParsedSchema, readDocUnavailableSchema]),
+);
+const encodeReadDocResult = Schema.encodeSync(readDocResultJsonSchema);
+
+const githubHistoryArgsSchema = Schema.Struct({
+	owner: Schema.String,
+	repo: Schema.String,
+	ref: Schema.String,
+	paths: Schema.Array(Schema.String),
+});
+const encodeGithubHistoryResult = Schema.encodeSync(githubHistoryResultJsonSchema);
+
+const invalidGithubConfig = (
+	paths: ReadonlyArray<string>,
+	reason: string,
+): ReadonlyArray<GitHubHistoryEntry> =>
+	paths.map((filePath) => makeHistoryUnavailable(filePath, reason));
+
+const makeDocRead = (filePath: string, content: string) => {
+	const parsed = matter(content);
+
+	return readDocParsedSchema.make({
+		_tag: "DocRead",
+		path: filePath,
+		frontmatter: frontmatterRecord(parsed.data),
+		body: parsed.content,
+		internalLinks: internalLinksFromBody(parsed.content),
+		externalLinks: externalLinksFromBody(parsed.content),
+		codeReferences: codeReferencesFromBody(parsed.content),
+	});
+};
+
+const makeDocUnavailable = (filePath: string, cause: unknown) =>
+	readDocUnavailableSchema.make({
+		_tag: "DocUnavailable",
+		path: filePath,
+		reason: errorMessage(cause),
+	});
+
+const githubHistoryTokenIssue = (token: string | undefined) =>
+	Match.value(token === undefined || token.length === 0).pipe(
+		Match.when(true, () => "GH_TOKEN or GITHUB_TOKEN is not configured"),
+		Match.orElse(() => undefined),
+	);
+
+const githubHistoryRepositoryIssue = (owner: string, repo: string, ref: string) =>
+	Match.value(owner.length === 0 || repo.length === 0 || ref.length === 0).pipe(
+		Match.when(true, () => "GitHub owner, repo, or ref is missing"),
+		Match.orElse(() => undefined),
+	);
+
+const githubHistoryConfigIssue = (
+	token: string | undefined,
+	owner: string,
+	repo: string,
+	ref: string,
+) =>
+	Option.fromNullishOr(
+		githubHistoryTokenIssue(token) ?? githubHistoryRepositoryIssue(owner, repo, ref),
+	);
+
 const listDocs: ToolDef = {
 	name: "list-docs",
 	description:
@@ -210,6 +345,92 @@ const listDocs: ToolDef = {
 		}).pipe(Effect.map(encodeListDocsResult), Effect.runPromise),
 };
 
+const readDoc: ToolDef = {
+	name: "read-doc",
+	description:
+		"Read and parse a Starlight Markdown document. Returns schema-encoded JSON with frontmatter, body, internal links, external links, and code references.",
+	parameters: Type.Object({
+		repoPath: Type.String({ description: "Absolute repository root path" }),
+		path: Type.String({ description: "Repo-relative Markdown path to read" }),
+	}),
+	execute: (args) =>
+		Effect.gen(function* () {
+			const { repoPath, path: filePath } =
+				yield* Schema.decodeUnknownEffect(readDocArgsSchema)(args);
+			const fullPath = path.resolve(repoPath, filePath);
+			return yield* Effect.tryPromise({
+				try: () => fs.readFile(fullPath, "utf8").then((content) => makeDocRead(filePath, content)),
+				catch: (cause) => new ReadDocError({ path: filePath, cause }),
+			}).pipe(
+				Effect.catchTag("ReadDocError", (error) =>
+					Effect.succeed(makeDocUnavailable(error.path, error.cause)),
+				),
+			);
+		}).pipe(Effect.map(encodeReadDocResult), Effect.runPromise),
+};
+
+const githubHistoryClient = (client: Octokit): GitHubHistoryClient => ({
+	listCommits: ({ owner, repo, ref, path: filePath }) =>
+		client.rest.repos
+			.listCommits({
+				owner,
+				repo,
+				sha: ref,
+				path: filePath,
+				per_page: 1,
+			})
+			.then((response) => ({ data: response.data })),
+});
+
+const makeGithubHistoryResult = (
+	token: string | undefined,
+	owner: string,
+	repo: string,
+	ref: string,
+	paths: ReadonlyArray<string>,
+) =>
+	Option.match(githubHistoryConfigIssue(token, owner, repo, ref), {
+		onNone: () =>
+			Effect.gen(function* () {
+				const client = new Octokit({ auth: token });
+				const histories = yield* Effect.promise(() =>
+					fetchGithubHistoryEntries(githubHistoryClient(client), {
+						owner,
+						repo,
+						ref,
+						paths,
+					}),
+				);
+
+				return githubHistoryResultJsonSchema.to.make({ histories });
+			}),
+		onSome: (reason) =>
+			Effect.succeed(
+				githubHistoryResultJsonSchema.to.make({
+					histories: invalidGithubConfig(paths, reason),
+				}),
+			),
+	});
+
+const githubHistory: ToolDef = {
+	name: "github-history",
+	description:
+		"Fetch latest GitHub commit metadata for repository paths. Returns schema-encoded JSON with tagged history entries.",
+	parameters: Type.Object({
+		owner: Type.String({ description: "GitHub repository owner" }),
+		repo: Type.String({ description: "GitHub repository name" }),
+		ref: Type.String({ description: "Branch, tag, or commit SHA to query" }),
+		paths: Type.Array(Type.String({ description: "Repo-relative paths to inspect" })),
+	}),
+	execute: (args) =>
+		Effect.gen(function* () {
+			const { owner, repo, ref, paths } =
+				yield* Schema.decodeUnknownEffect(githubHistoryArgsSchema)(args);
+			const token = githubToken();
+			return yield* makeGithubHistoryResult(token, owner, repo, ref, paths);
+		}).pipe(Effect.map(encodeGithubHistoryResult), Effect.runPromise),
+};
+
 const checkUrl: ToolDef = {
 	name: "check-url",
 	description:
@@ -229,9 +450,7 @@ const checkUrl: ToolDef = {
 		}).pipe(
 			Effect.catchTags({
 				InvalidToolUrl: (error) =>
-					Effect.succeed(
-						checkUrlInvalidSchema.make({ _tag: "InvalidUrl", reason: error.reason }),
-					),
+					Effect.succeed(checkUrlInvalidSchema.make({ _tag: "InvalidUrl", reason: error.reason })),
 				UrlCheckError: (error) =>
 					Effect.succeed(
 						checkUrlUnreachableSchema.make({
@@ -385,6 +604,9 @@ const makeAnalyticsResult = Effect.gen(function* () {
 const checkStalenessArgsSchema = Schema.Struct({
 	repoPath: Schema.String,
 	glob: Schema.String,
+	owner: Schema.String,
+	repo: Schema.String,
+	ref: Schema.String,
 	pageviews: Schema.String,
 	repoTraffic: Schema.String,
 	pageviewThreshold: Schema.String,
@@ -393,11 +615,17 @@ const checkStalenessArgsSchema = Schema.Struct({
 const makeCheckStalenessArgs = (
 	repoPath: string,
 	glob: string,
+	owner: string,
+	repo: string,
+	ref: string,
 	signals: Option.Option<Signals>,
 ) => {
 	const defaultArgs = checkStalenessArgsSchema.make({
 		repoPath,
 		glob,
+		owner,
+		repo,
+		ref,
 		pageviews: encodeNullableSignalMap(null),
 		repoTraffic: encodeNullableSignalMap(null),
 		pageviewThreshold: encodePageviewThreshold(defaultPageviewThreshold),
@@ -410,8 +638,7 @@ const makeCheckStalenessArgs = (
 				Struct.evolve(defaultArgs, {
 					pageviews: () => encodeNullableSignalMap(availableSignals.pageviews),
 					repoTraffic: () => encodeNullableSignalMap(availableSignals.repoTraffic),
-					pageviewThreshold: () =>
-						encodePageviewThreshold(availableSignals.pageviewThreshold),
+					pageviewThreshold: () => encodePageviewThreshold(availableSignals.pageviewThreshold),
 				}),
 		}),
 	);
@@ -429,16 +656,26 @@ export default async function ({ init, payload }: FlueContext) {
 	const agent = await init({
 		sandbox: "local",
 		model: "openai/gpt-4o",
-		tools: [listDocs, checkUrl, fetchAnalytics],
+		tools: [listDocs, readDoc, githubHistory, checkUrl, fetchAnalytics],
 	});
 
 	const session = await agent.session();
 
 	const repoPath = (payload.repoPath as string | undefined) ?? "/workspace";
 	const glob = (payload.glob as string | undefined) ?? "**/*.md";
+	const repository =
+		(payload.repository as string | undefined) ?? process.env.GITHUB_REPOSITORY ?? "";
+	const [repositoryOwner = "", repositoryName = ""] = repository.split("/");
+	const owner = (payload.owner as string | undefined) ?? repositoryOwner;
+	const repo = (payload.repo as string | undefined) ?? repositoryName;
+	const ref =
+		(payload.ref as string | undefined) ??
+		process.env.GITHUB_SHA ??
+		process.env.GITHUB_REF_NAME ??
+		"main";
 	const rawSignals = v.parse(signalsPayloadSchema, payload.signals);
 	const signals = Option.map(Option.fromNullishOr(rawSignals), makeSignals);
-	const checkStalenessArgs = makeCheckStalenessArgs(repoPath, glob, signals);
+	const checkStalenessArgs = makeCheckStalenessArgs(repoPath, glob, owner, repo, ref, signals);
 
 	return await Match.value(mode).pipe(
 		Match.orElse(() =>

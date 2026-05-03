@@ -12,37 +12,64 @@ JSON and use its `files` array as the complete list of docs to audit. Ignore any
 `node_modules/`, `dist/`, or `.git/`.
 
 The `files` array contains paths relative to `{{repoPath}}`; use those paths when reporting files
-or passing file paths to `git -C {{repoPath}}`.
+or when requesting commit history.
 
 ## Step 2 — For each markdown file
 
 For each file found:
 
-1. **Get the doc's last commit date:**
+1. **Get the doc's latest commit evidence:**
 
-   ```bash
-   git -C {{repoPath}} log -1 --format="%ai" -- <relative-path>
+   Call `github-history` with:
+
+   ```json
+   {
+     "owner": "{{owner}}",
+     "repo": "{{repo}}",
+     "ref": "{{ref}}",
+     "paths": ["<relative-path>"]
+   }
    ```
 
-   If the file has no commits (untracked), skip it.
+   Parse the returned JSON and use the tagged result:
+   - `{ "_tag": "CommitFound", "committedAt": "..." }` — use `committedAt` as the doc commit date.
+   - `{ "_tag": "NoCommitFound" }` — skip the file.
+   - `{ "_tag": "HistoryUnavailable", "reason": "..." }` — skip the file unless another issue is
+     independently backed by evidence.
 
-2. **Extract code references** using `grep` — look for:
-   - Markdown links pointing to source files: `[text](path/to/file.ts)`
-   - Fenced code blocks with a file path comment on the first line: `` ```ts // src/foo.ts ``
-   - Bare file paths on their own line matching `src/`, `lib/`, `packages/`
+2. **Read parsed markdown evidence:**
 
-3. **For each referenced code file**, get its last commit date:
+   Call `read-doc` with:
 
-   ```bash
-   git -C {{repoPath}} log -1 --format="%ai" -- <code-file>
+   ```json
+   {
+     "repoPath": "{{repoPath}}",
+     "path": "<relative-path>"
+   }
    ```
 
-   If the code file's commit is **newer** than the doc's commit → issue: `"<code-file> updated after this doc (code: <date>, doc: <date>)"`
+   Parse the returned JSON and use the tagged result:
+   - `{ "_tag": "DocRead", ... }` — use `internalLinks`, `externalLinks`, and `codeReferences`.
+   - `{ "_tag": "DocUnavailable", "reason": "..." }` — skip the file unless commit evidence
+     already proves another issue.
 
-4. **Check internal markdown links** — for each `[text](./relative.md)` link, verify the
-   target file exists under `{{repoPath}}`. Missing targets → issue: `"broken link: <target>"`
+3. **For referenced code files**, get latest commit evidence:
 
-5. **Check external links** — for each `https?://` URL found in the file, call `check-url`.
+   Call `github-history` once per doc with the `codeReferences` paths batched in `paths`.
+
+   If a referenced code file returns `{ "_tag": "CommitFound" }` and its `committedAt` is **newer**
+   than the doc's `committedAt`, add issue:
+   `"<code-file> updated after this doc (code: <date>, doc: <date>)"`.
+
+   Ignore `NoCommitFound` and `HistoryUnavailable` for staleness scoring; only flag staleness backed
+   by commit evidence.
+
+4. **Check internal markdown links** — for each `internalLinks` item ending in `.md` or `.mdx`,
+   verify the target file exists in the `files` array from `list-docs`. Resolve relative links from
+   the current document path. Missing targets → issue:
+   `"broken link: <target>"`
+
+5. **Check external links** — for each `externalLinks` URL, call `check-url`.
    Parse the returned JSON tagged result:
    - `{ "_tag": "Reachable", "statusCode": N }` — if `N` is outside `200..299`, add issue: `"dead link: <url> (<N>)"`
    - `{ "_tag": "Unreachable", "reason": "..." }` — add issue: `"dead link: <url> (unreachable)"`

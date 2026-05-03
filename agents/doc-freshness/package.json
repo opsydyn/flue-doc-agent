@@ -10,7 +10,9 @@
 	},
 	"dependencies": {
 		"@flue/sdk": "^0.3.6",
+		"@octokit/rest": "^22.0.1",
 		"effect": "beta",
+		"gray-matter": "^4.0.3",
 		"valibot": "^1.0.0"
 	}
 }
