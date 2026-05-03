@@ -687,7 +687,7 @@ export default async function ({ init, payload }: FlueContext) {
 
 	const agent = await init({
 		sandbox: "local",
-		model: "openai/gpt-5-nano",
+		model: "openai/gpt-4.1-nano",
 		tools: [listDocs, readDoc, githubHistory, reviewFreshnessTool, checkUrl, fetchAnalytics],
 	});
 
