@@ -359,7 +359,7 @@ const githubHistory: ToolDef = {
 const reviewFreshnessTool: ToolDef = {
 	name: "review-freshness",
 	description:
-		"Deterministically assign freshness status, priority, summary counts, and shouldFail from structured stale/warning evidence.",
+		"Deterministically assign freshness status, priority, summary counts, and shouldFail from structured stale/warning evidence. Args must contain pageviewThreshold and files with path, lastDocCommit, staleReasons, warningReasons, and optional pageViews30d only; do not pass final-result fields such as status, priority, issues, summary, report, or shouldFail.",
 	parameters: Type.Object({
 		pageviewThreshold: Type.Number({ description: "High-demand threshold for 30-day page views" }),
 		files: Type.Array(
@@ -687,7 +687,7 @@ export default async function ({ init, payload }: FlueContext) {
 
 	const agent = await init({
 		sandbox: "local",
-		model: "openai/gpt-4.1-nano",
+		model: "openai/gpt-4.1-mini",
 		tools: [listDocs, readDoc, githubHistory, reviewFreshnessTool, checkUrl, fetchAnalytics],
 	});
 

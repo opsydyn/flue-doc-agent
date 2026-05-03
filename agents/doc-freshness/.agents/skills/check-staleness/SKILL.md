@@ -11,6 +11,10 @@ Call `list-docs` with `repoPath: "{{repoPath}}"` and `glob: "{{glob}}"`. Parse t
 JSON and use its `files` array as the complete list of docs to audit. Ignore any paths containing
 `node_modules/`, `dist/`, or `.git/`.
 
+Only audit paths that appear in the `files` array returned by `list-docs`. Never invent paths,
+never audit paths from memory, and never include `.agents/`, `agents/`, `flue-main/`, or any other
+path unless `list-docs` returned it for this run.
+
 The `files` array contains paths relative to `{{repoPath}}`; use those paths when reporting files
 or when requesting commit history.
 
@@ -107,6 +111,11 @@ Call `review-freshness` once with:
 }
 ```
 
+The `review-freshness` tool accepts only structured evidence. Do **not** pass final-result fields
+to this tool. In particular, never include `status`, `priority`, `issues`, `summary`, `report`, or
+`shouldFail` in `review-freshness` arguments. For each audited document, pass `staleReasons` and
+`warningReasons` arrays, using empty arrays when no evidence was found.
+
 Use `{{pageviewThreshold}}` as the numeric `pageviewThreshold`. Omit `pageViews30d` when page-view
 signals are null or the doc path is not present.
 
@@ -150,7 +159,8 @@ Use the `shouldFail` value returned by `review-freshness`.
 
 ## Step 5 — Return the result
 
-Return a JSON object in the result block with this exact shape:
+Return a JSON object in the Flue result block with this exact shape. Do not return plain JSON
+outside the result block.
 
 ```json
 {
