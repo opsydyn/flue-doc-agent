@@ -169,9 +169,12 @@ jobs:
           "$GITHUB_WORKSPACE/node_modules/.bin/varlock" run --path "$GITHUB_WORKSPACE/.env.schema" -- flue run doc-freshness --target node \
             --id "freshness-${{ github.run_id }}" --payload "$PAYLOAD" \
             > /tmp/freshness-output.txt \
-            2> /tmp/freshness.log
+            2> /tmp/freshness.log || freshness_status=$?
           cat /tmp/freshness.log
           cat /tmp/freshness-output.txt
+          if [ "${freshness_status:-0}" -ne 0 ]; then
+            exit "$freshness_status"
+          fi
           bun scripts/extract-flue-json.ts \
             --input /tmp/freshness-output.txt \
             --output /tmp/freshness-result.json
