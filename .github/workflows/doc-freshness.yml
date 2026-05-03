@@ -43,6 +43,7 @@ jobs:
         env:
           APP_ENV: production
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DOC_FRESHNESS_SUMMARY_MODEL: gpt-4.1-nano
           ONE_DOLLAR_STATS_API_KEY: ${{ secrets.ONE_DOLLAR_STATS_API_KEY }}
           ODS_SITE_ID: ${{ secrets.ODS_SITE_ID }}
           PUBLIC_ODS_SITE_ID: ${{ secrets.ODS_SITE_ID }}
@@ -185,6 +186,9 @@ jobs:
         run: bun scripts/emit-github-annotations.ts --input /tmp/freshness-result.json
 
       - name: Generate Starlight freshness pages
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DOC_FRESHNESS_SUMMARY_MODEL: gpt-4.1-nano
         run: |
           bun agents/doc-freshness/scripts/write-starlight-reports.ts \
             --ods /tmp/ods-pageviews.json \
