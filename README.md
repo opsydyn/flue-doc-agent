@@ -42,6 +42,7 @@ All `bun` commands run from the repo root unless noted.
 
 ```bash
 bun install           # install all workspace dependencies
+bun run env:check     # validate environment with Varlock
 
 # Lint, format, type-check
 bun run check         # biome check --write
@@ -54,14 +55,16 @@ bun run build         # build to dist/
 
 ## Running the agent
 
-From `agents/doc-freshness/`, with `OPENAI_API_KEY` in `.env`:
+Environment variables are described in [`.env.schema`](.env.schema). Put local secret values in a
+gitignored `.env` or `.env.local`, then run the agent through Varlock so the environment is
+validated before Flue starts.
 
 ```bash
 # Watch mode (port 3583)
-flue dev --target node --env .env
+varlock run -- flue dev --target node
 
 # One-shot
-flue run doc-freshness --target node --id run-1 --env .env \
+varlock run -- flue run doc-freshness --target node --id run-1 \
   --payload '{"repoPath": "/path/to/repo"}'
 ```
 

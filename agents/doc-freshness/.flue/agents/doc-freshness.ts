@@ -1,6 +1,6 @@
 import { type FlueContext, type ToolDef, Type } from "@flue/sdk/client";
 import { Octokit } from "@octokit/rest";
-import { Data, Effect, Match, Option, Schema, Struct } from "effect";
+import { Data, Effect, Layer, Match, Option, Redacted, Schema, Struct } from "effect";
 import * as Record from "effect/Record";
 import type { Dirent } from "node:fs";
 import * as fs from "node:fs/promises";
@@ -26,6 +26,7 @@ import {
 } from "../../src/MarkdownDoc";
 import { OdsClient, OdsClientDefault } from "../../src/OdsClient";
 import { UrlChecker, UrlCheckerDefault } from "../../src/UrlChecker";
+import { AppConfig, AppConfigLive } from "../../src/config/AppConfig";
 
 export const triggers = { webhook: true };
 
@@ -163,10 +164,13 @@ class InvalidToolUrl extends Data.TaggedError("InvalidToolUrl")<{
 }> {}
 
 class MissingAnalyticsConfig extends Data.TaggedError("MissingAnalyticsConfig")<{
-	readonly variable: "ODS_API_KEY" | "ODS_SITE_ID";
+	readonly variable: "ONE_DOLLAR_STATS_API_KEY" | "ODS_SITE_ID";
 }> {}
 
-const githubToken = () => process.env.GH_TOKEN ?? process.env.GITHUB_TOKEN;
+const githubToken = Effect.gen(function* () {
+	const config = yield* AppConfig;
+	return Redacted.value(config.githubToken);
+});
 
 const checkUrlArgsSchema = Schema.Struct({
 	url: Schema.String,
@@ -343,9 +347,9 @@ const githubHistory: ToolDef = {
 		Effect.gen(function* () {
 			const { owner, repo, ref, paths } =
 				yield* Schema.decodeUnknownEffect(githubHistoryArgsSchema)(args);
-			const token = githubToken();
+			const token = yield* githubToken;
 			return yield* makeGithubHistoryResult(token, owner, repo, ref, paths);
-		}).pipe(Effect.map(encodeGithubHistoryResult), Effect.runPromise),
+		}).pipe(Effect.map(encodeGithubHistoryResult), Effect.provide(AppConfigLive), Effect.runPromise),
 };
 
 const reviewFreshnessTool: ToolDef = {
@@ -424,7 +428,7 @@ const encodeAnalyticsToolResult = Schema.encodeSync(analyticsToolResultJsonSchem
 
 const requireAnalyticsConfig = (
 	value: string | undefined,
-	variable: "ODS_API_KEY" | "ODS_SITE_ID",
+	variable: "ONE_DOLLAR_STATS_API_KEY" | "ODS_SITE_ID",
 ) =>
 	Schema.decodeUnknownEffect(Schema.NonEmptyString)(value).pipe(
 		Effect.mapError(() => new MissingAnalyticsConfig({ variable })),
@@ -437,8 +441,12 @@ const fetchAnalytics: ToolDef = {
 	parameters: Type.Object({}),
 	execute: () =>
 		Effect.gen(function* () {
-			const apiKey = yield* requireAnalyticsConfig(process.env.ODS_API_KEY, "ODS_API_KEY");
-			const siteId = yield* requireAnalyticsConfig(process.env.ODS_SITE_ID, "ODS_SITE_ID");
+			const config = yield* AppConfig;
+			const apiKey = yield* requireAnalyticsConfig(
+				Redacted.value(config.oneDollarStatsApiKey),
+				"ONE_DOLLAR_STATS_API_KEY",
+			);
+			const siteId = yield* requireAnalyticsConfig(config.odsSiteId, "ODS_SITE_ID");
 			const ods = yield* OdsClient;
 			const data = yield* ods.fetchPageviews(apiKey, siteId);
 
@@ -447,7 +455,7 @@ const fetchAnalytics: ToolDef = {
 			Effect.catchTag("MissingAnalyticsConfig", () =>
 				Effect.succeed(
 					analyticsUnavailableSchema.make({
-						error: "ODS_API_KEY or ODS_SITE_ID not configured",
+						error: "ONE_DOLLAR_STATS_API_KEY or ODS_SITE_ID not configured",
 					}),
 				),
 			),
@@ -458,7 +466,7 @@ const fetchAnalytics: ToolDef = {
 				Effect.succeed(analyticsUnavailableSchema.make({ error: String(e) })),
 			),
 			Effect.map(encodeAnalyticsToolResult),
-			Effect.provide(OdsClientDefault),
+			Effect.provide(Layer.mergeAll(OdsClientDefault, AppConfigLive)),
 			Effect.runPromise,
 		),
 };
@@ -503,8 +511,12 @@ const makeAnalyticsUnavailable = (error: string) =>
 	});
 
 const makeAnalyticsResult = Effect.gen(function* () {
-	const apiKey = yield* requireAnalyticsConfig(process.env.ODS_API_KEY, "ODS_API_KEY");
-	const siteId = yield* requireAnalyticsConfig(process.env.ODS_SITE_ID, "ODS_SITE_ID");
+	const config = yield* AppConfig;
+	const apiKey = yield* requireAnalyticsConfig(
+		Redacted.value(config.oneDollarStatsApiKey),
+		"ONE_DOLLAR_STATS_API_KEY",
+	);
+	const siteId = yield* requireAnalyticsConfig(config.odsSiteId, "ODS_SITE_ID");
 	const ods = yield* OdsClient;
 	const data = yield* ods.fetchPageviews(apiKey, siteId);
 	const pageviews = yield* Schema.decodeUnknownEffect(odsPageviewsSchema)(data);
@@ -534,13 +546,15 @@ const makeAnalyticsResult = Effect.gen(function* () {
 	});
 }).pipe(
 	Effect.catchTag("MissingAnalyticsConfig", () =>
-		Effect.succeed(makeAnalyticsUnavailable("ODS_API_KEY or ODS_SITE_ID not configured")),
+		Effect.succeed(
+			makeAnalyticsUnavailable("ONE_DOLLAR_STATS_API_KEY or ODS_SITE_ID not configured"),
+		),
 	),
 	Effect.catchTag("OdsClientError", (e) =>
 		Effect.succeed(makeAnalyticsUnavailable(String(e.cause))),
 	),
 	Effect.catchTag("SchemaError", (e) => Effect.succeed(makeAnalyticsUnavailable(String(e)))),
-	Effect.provide(OdsClientDefault),
+	Effect.provide(Layer.mergeAll(OdsClientDefault, AppConfigLive)),
 );
 
 const checkStalenessArgsSchema = Schema.Struct({
@@ -586,11 +600,22 @@ const makeCheckStalenessArgs = (
 	);
 };
 
+const preferredRef = (sha: string, refName: string) =>
+	Match.value(sha.length > 0).pipe(
+		Match.when(true, () => sha),
+		Match.orElse(() => refName),
+	);
+
 // -----------------------------------------------------------------------------
 // Handler
 // -----------------------------------------------------------------------------
 
 export default async function ({ init, payload }: FlueContext) {
+	const config = await Effect.runPromise(
+		Effect.gen(function* () {
+			return yield* AppConfig;
+		}).pipe(Effect.provide(AppConfigLive)),
+	);
 	const mode = (payload.mode as string | undefined) ?? "check-staleness";
 
 	if (mode === "analytics") return await Effect.runPromise(makeAnalyticsResult);
@@ -605,16 +630,11 @@ export default async function ({ init, payload }: FlueContext) {
 
 	const repoPath = (payload.repoPath as string | undefined) ?? "/workspace";
 	const glob = (payload.glob as string | undefined) ?? "**/*.md";
-	const repository =
-		(payload.repository as string | undefined) ?? process.env.GITHUB_REPOSITORY ?? "";
+	const repository = (payload.repository as string | undefined) ?? config.githubRepository;
 	const [repositoryOwner = "", repositoryName = ""] = repository.split("/");
 	const owner = (payload.owner as string | undefined) ?? repositoryOwner;
 	const repo = (payload.repo as string | undefined) ?? repositoryName;
-	const ref =
-		(payload.ref as string | undefined) ??
-		process.env.GITHUB_SHA ??
-		process.env.GITHUB_REF_NAME ??
-		"main";
+	const ref = (payload.ref as string | undefined) ?? preferredRef(config.githubSha, config.githubRef);
 	const rawSignals = v.parse(signalsPayloadSchema, payload.signals);
 	const signals = Option.map(Option.fromNullishOr(rawSignals), makeSignals);
 	const checkStalenessArgs = makeCheckStalenessArgs(repoPath, glob, owner, repo, ref, signals);

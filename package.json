@@ -5,6 +5,7 @@
 	"workspaces": ["agents/*", "packages/*"],
 	"scripts": {
 		"check": "biome check --write .",
+		"env:check": "varlock load --show-all",
 		"lint": "biome lint .",
 		"format": "biome format --write .",
 		"lint:md": "markdownlint-cli2",
@@ -24,6 +25,7 @@
 		"@typescript/native-preview": "latest",
 		"bun-types": "latest",
 		"knip": "^6.9.0",
-		"markdownlint-cli2": "^0.22.1"
+		"markdownlint-cli2": "^0.22.1",
+		"varlock": "^1.1.0"
 	}
 }

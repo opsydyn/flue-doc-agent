@@ -1,12 +1,17 @@
 import { readFile } from "node:fs/promises";
 import { Octokit } from "@octokit/rest";
-import { Match, Option, Record, Schema } from "effect";
+import { Effect, Match, Option, Record, Redacted, Schema } from "effect";
 import {
 	type GithubFreshnessIssueAction,
 	githubFreshnessIssueInputJsonSchema,
 	githubOpenIssueSchema,
 	planGithubFreshnessIssues,
 } from "../src/GithubFreshnessIssues";
+import {
+	GithubActionsConfig,
+	GithubActionsConfigLive,
+	githubRepositoryParts,
+} from "../src/config/GithubActionsConfig";
 
 const args = process.argv.slice(2).reduce<Record.ReadonlyRecord<string, string>>(
 	(state, arg, index, all) =>
@@ -32,14 +37,15 @@ const requiredOption = (name: string, value: Option.Option<string>) =>
 	Option.getOrElse(value, () => failMissing(name));
 
 const inputPath = requiredOption("--input", Record.get(args, "input"));
-const repository = requiredOption("GITHUB_REPOSITORY", nonEmpty(process.env.GITHUB_REPOSITORY));
-const repositoryParts = repository.split("/", 2);
+const config = await Effect.runPromise(
+	Effect.gen(function* () {
+		return yield* GithubActionsConfig;
+	}).pipe(Effect.provide(GithubActionsConfigLive)),
+);
+const repositoryParts = githubRepositoryParts(config.githubRepository);
 const owner = requiredOption("repository owner", nonEmpty(repositoryParts[0]));
 const repo = requiredOption("repository name", nonEmpty(repositoryParts[1]));
-const token = requiredOption(
-	"GH_TOKEN or GITHUB_TOKEN",
-	Option.orElse(nonEmpty(process.env.GH_TOKEN), () => nonEmpty(process.env.GITHUB_TOKEN)),
-);
+const token = Redacted.value(config.githubToken);
 
 const octokit = new Octokit({ auth: token });
 const decodeFreshnessResult = Schema.decodeUnknownSync(githubFreshnessIssueInputJsonSchema);

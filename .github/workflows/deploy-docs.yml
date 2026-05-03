@@ -38,11 +38,25 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Validate environment schema
+        env:
+          APP_ENV: production
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ONE_DOLLAR_STATS_API_KEY: ${{ secrets.ONE_DOLLAR_STATS_API_KEY }}
+          ODS_SITE_ID: ${{ secrets.ODS_SITE_ID }}
+          PUBLIC_ODS_SITE_ID: ${{ secrets.ODS_SITE_ID }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_SHA: ${{ github.sha }}
+          PAGEVIEW_THRESHOLD: '50'
+          DOCS_BASE_PATH: /flue-doc-agent
+        run: varlock load --show-all
+
       - name: Build docs
         working-directory: packages/docs
         env:
           # Public — safe to expose; visible in page source regardless.
-          PUBLIC_ODS_SITE_ID: ${{ vars.PUBLIC_ODS_SITE_ID }}
+          PUBLIC_ODS_SITE_ID: ${{ secrets.ODS_SITE_ID }}
         run: bun run build
 
       - name: Upload pages artifact

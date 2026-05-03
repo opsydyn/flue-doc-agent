@@ -17,6 +17,10 @@ Run from this directory (`packages/docs/`):
 | `bun run build` | Build static site to `./dist/` |
 | `bun run preview` | Preview production build locally |
 
+The repo-level [`.env.schema`](../../.env.schema) is the environment contract. From the repo root,
+run `bun run env:check` before CI-like builds. When a command needs resolved environment values,
+prefer `varlock run -- <command>`.
+
 ## Content
 
 Documentation lives in `src/content/docs/`. Starlight maps the file tree directly to
