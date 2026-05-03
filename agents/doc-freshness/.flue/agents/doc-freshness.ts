@@ -8,6 +8,11 @@ import * as path from "node:path";
 import * as v from "valibot";
 import { httpUrl } from "../../src/Domain";
 import {
+	freshnessReviewInputSchema,
+	freshnessReviewJsonSchema,
+	reviewFreshness,
+} from "../../src/FreshnessReview";
+import {
 	fetchGithubHistoryEntries,
 	type GitHubHistoryClient,
 	type GitHubHistoryEntry,
@@ -207,6 +212,7 @@ const githubHistoryArgsSchema = Schema.Struct({
 	paths: Schema.Array(Schema.String),
 });
 const encodeGithubHistoryResult = Schema.encodeSync(githubHistoryResultJsonSchema);
+const encodeFreshnessReviewResult = Schema.encodeSync(freshnessReviewJsonSchema);
 
 const invalidGithubConfig = (
 	paths: ReadonlyArray<string>,
@@ -340,6 +346,31 @@ const githubHistory: ToolDef = {
 			const token = githubToken();
 			return yield* makeGithubHistoryResult(token, owner, repo, ref, paths);
 		}).pipe(Effect.map(encodeGithubHistoryResult), Effect.runPromise),
+};
+
+const reviewFreshnessTool: ToolDef = {
+	name: "review-freshness",
+	description:
+		"Deterministically assign freshness status, priority, summary counts, and shouldFail from structured stale/warning evidence.",
+	parameters: Type.Object({
+		pageviewThreshold: Type.Number({ description: "High-demand threshold for 30-day page views" }),
+		files: Type.Array(
+			Type.Object({
+				path: Type.String({ description: "Repo-relative documentation path" }),
+				lastDocCommit: Type.String({ description: "Latest documentation commit timestamp" }),
+				staleReasons: Type.Array(Type.String({ description: "Git-backed stale evidence" })),
+				warningReasons: Type.Array(Type.String({ description: "Link or availability warnings" })),
+				pageViews30d: Type.Optional(
+					Type.Number({ description: "Optional 30-day page view count for this doc" }),
+				),
+			}),
+		),
+	}),
+	execute: (args) =>
+		Effect.gen(function* () {
+			const input = yield* Schema.decodeUnknownEffect(freshnessReviewInputSchema)(args);
+			return reviewFreshness(input);
+		}).pipe(Effect.map(encodeFreshnessReviewResult), Effect.runPromise),
 };
 
 const checkUrl: ToolDef = {
@@ -567,7 +598,7 @@ export default async function ({ init, payload }: FlueContext) {
 	const agent = await init({
 		sandbox: "local",
 		model: "openai/gpt-4o",
-		tools: [listDocs, readDoc, githubHistory, checkUrl, fetchAnalytics],
+		tools: [listDocs, readDoc, githubHistory, reviewFreshnessTool, checkUrl, fetchAnalytics],
 	});
 
 	const session = await agent.session();

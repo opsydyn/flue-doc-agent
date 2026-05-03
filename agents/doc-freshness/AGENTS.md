@@ -10,6 +10,8 @@ most impactful issues surface first.
 - Use `list-docs` to find markdown files matching patterns.
 - Use `read-doc` to parse frontmatter, markdown body, links, and code references.
 - Use `github-history` to get commit timestamps; do not run `git` through `bash`.
+- Use `review-freshness` to assign status, priority, summary counts, and `shouldFail` from
+  structured stale/warning evidence.
 - Use `check-url` to validate external links (HTTP HEAD only — never fetch full bodies).
 - A doc is **stale** when a file it references has a more recent git commit than the doc itself.
 - A doc has a **warning** when it contains broken internal links or unreachable external URLs.
@@ -18,7 +20,8 @@ most impactful issues surface first.
 
 ## Priority scoring
 
-When page-view signals are provided, combine staleness × demand to assign priority:
+When page-view signals are provided, pass the structured evidence and page-view counts to
+`review-freshness`; do not score priority manually.
 
 | Status | 30-day page views | Priority |
 | --- | --- | --- |

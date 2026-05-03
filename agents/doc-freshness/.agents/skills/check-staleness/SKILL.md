@@ -75,12 +75,12 @@ For each file found:
    - `{ "_tag": "Unreachable", "reason": "..." }` — add issue: `"dead link: <url> (unreachable)"`
    - `{ "_tag": "InvalidUrl", "reason": "..." }` — add issue: `"dead link: <url> (invalid-url)"`
 
-6. Assign status:
-   - `stale` — any code file newer than the doc
-   - `warning` — broken internal link or dead external URL (but no stale code refs)
-   - `fresh` — no issues
+6. Keep evidence structured for review:
+   - Add code-commit evidence issues to `staleReasons`.
+   - Add broken internal links and dead external URLs to `warningReasons`.
+   - Do not assign status or priority yourself; `review-freshness` does that deterministically.
 
-## Step 3 — Score by demand (priority)
+## Step 3 — Review structured evidence
 
 Page-view signals: `{{pageviews}}` is a JSON object mapping relative file path → 30-day view
 count from the deployed docs site. `{{repoTraffic}}` maps GitHub repo path → 14-day view count.
@@ -88,18 +88,38 @@ Either may be the string `"null"` if signals were not fetched this run.
 
 The threshold for "high demand" is `{{pageviewThreshold}}` views in 30 days.
 
-Parse the pageviews JSON (if not `"null"`), then for each file look up its path. Apply:
+Parse the pageviews JSON (if not `"null"`), then for each file look up its path.
 
-| Status | 30-day page views | Priority |
+Call `review-freshness` once with:
+
+```json
+{
+  "pageviewThreshold": 50,
+  "files": [
+    {
+      "path": "<relative-doc-path>",
+      "lastDocCommit": "<doc commit timestamp>",
+      "staleReasons": ["..."],
+      "warningReasons": ["..."],
+      "pageViews30d": 123
+    }
+  ]
+}
+```
+
+Use `{{pageviewThreshold}}` as the numeric `pageviewThreshold`. Omit `pageViews30d` when page-view
+signals are null or the doc path is not present.
+
+Parse the returned JSON and use its `files`, `summary`, and `shouldFail` fields as authoritative.
+The tool applies the deterministic status/priority table:
+
+| Evidence | 30-day page views | Result |
 | --- | --- | --- |
-| `stale` | > threshold | `critical` |
-| `stale` | ≤ threshold or not found | `low` |
-| `warning` | > threshold | `medium` |
-| `warning` | ≤ threshold or not found | `low` |
-| `fresh` | any | omit priority field entirely |
-
-Set `pageViews30d` to the integer from the pageviews map, or omit the field if the path is
-not present or signals are null.
+| `staleReasons` non-empty | > threshold | `status: "stale"`, `priority: "critical"` |
+| `staleReasons` non-empty | ≤ threshold or unknown | `status: "stale"`, `priority: "low"` |
+| no stale reasons, `warningReasons` non-empty | > threshold | `status: "warning"`, `priority: "medium"` |
+| no stale reasons, `warningReasons` non-empty | ≤ threshold or unknown | `status: "warning"`, `priority: "low"` |
+| no stale or warning reasons | any | `status: "fresh"`, no priority |
 
 ## Step 4 — Generate the CI report
 
@@ -126,7 +146,7 @@ Compose a GitHub-flavoured markdown string for the `report` field. Include:
 
 4. If any files have status `"warning"`, a **Warnings** section listing each file.
 
-Set `shouldFail` to `true` if `summary.critical > 0`, otherwise `false`.
+Use the `shouldFail` value returned by `review-freshness`.
 
 ## Step 5 — Return the result
 
