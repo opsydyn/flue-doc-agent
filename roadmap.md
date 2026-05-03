@@ -3,34 +3,44 @@
 ## Goal
 
 Build a reliable Starlight documentation freshness workflow that combines deterministic
-repository evidence with Flue's agentic review capabilities. The MVP should publish useful
-Markdown reports into the docs site, preserve Git history for generated reports, and avoid
-brittle shell-driven control flow.
+repository evidence with optional AI advisory context. The workflow should publish useful Markdown
+reports into the docs site, preserve Git history for generated reports, and avoid brittle
+LLM-orchestrated control flow.
 
-## Current Problems
+## Stabilized Foundations
 
-- The agent still asks the built-in `bash` tool to run `git`.
-- CI can fail with `bash: git: command not found` inside the Flue tool environment.
-- `defineCommand("gh", { env: { GH_TOKEN } })` does not fix missing `git`; it only defines a
-  GitHub CLI command and must still be passed as a tool to be usable.
-- The report helper scripts are `.mjs`, loosely typed, and do manual parsing.
-- The Starlight app only needs Markdown report pages, but the workflow currently passes through
-  several JSON/log extraction steps before writing Markdown.
-- Freshness evidence should be modelled as domain data, not string tokens or implicit shell text.
+- The default freshness gate now runs through an in-process deterministic Effect pipeline.
+- The workflow no longer depends on a model calling `git` through the Flue `bash` tool.
+- GitHub history, Markdown parsing, URL checks, priority, and `shouldFail` are code-driven.
+- Generated Starlight report pages are committed for historical comparison.
+- The freshness page records AI provenance for the executive summary and states that the audit
+  engine itself used zero model tokens.
+
+## Remaining Problems
+
+- Deterministic evidence can over-report stale candidates when a code change does not actually
+  invalidate prose.
+- The report needs better maintainer guidance: top risks, top next actions, issue wording, and
+  concrete patch suggestions.
+- Implicit doc/code relationships are not yet discovered unless the document names paths directly.
+- Trend data is visible through Git history, but it is not yet summarized as structured deltas.
+- AI output needs per-feature provenance, validation, and fallbacks before it can safely enrich
+  workflow artifacts.
 
 ## Direction
 
-Move shell-sensitive evidence gathering out of the LLM prompt and into typed Flue tools. Keep the
-agent responsible for judgement, prioritisation, and synthesis.
+Keep shell-sensitive evidence gathering out of LLM prompts. The deterministic Effect pipeline owns
+status, priority, counts, and CI gates. AI can run after that pipeline to provide advisory
+judgement, synthesis, and maintainer-facing wording.
 
 The preferred pipeline is:
 
 ```text
 Starlight docs Markdown
-  -> typed doc inventory tool
-  -> typed doc parser using gray-matter
-  -> typed GitHub history tool using Octokit
-  -> Flue agent review and prioritisation
+  -> deterministic Markdown parser
+  -> GitHub history lookup using Octokit
+  -> deterministic freshness review and priority
+  -> optional AI advisory review
   -> typed Starlight Markdown report writer
   -> docs build
   -> commit generated report pages
@@ -292,10 +302,12 @@ Secrets and env:
 
 ### Phase 4: Agentic Review Layer
 
-- Give the Flue agent structured tool outputs only.
-- Ask the agent to explain why a document is stale or fresh.
-- Keep priority scoring deterministic where possible.
-- Let the agent produce the human-readable report and remediation queue.
+- Keep freshness status, priority, counts, and `shouldFail` deterministic.
+- Add an AI advisory layer after deterministic scoring.
+- Ask AI to classify stale candidates as `real-stale`, `needs-review`, or
+  `probably-harmless`.
+- Add semantic impact, confidence, rationale, affected sections, and suggested fixes.
+- Record model provenance and token usage per AI feature.
 
 ### Phase 5: Publishing and Feedback
 
@@ -303,6 +315,18 @@ Secrets and env:
 - Let the existing docs deploy workflow publish Starlight.
 - Optionally use Octokit for PR comments, issue creation, or GitHub check annotations.
 - Add trend pages once report history is stable.
+
+### Phase 6: AI Advisory Workflow
+
+- Render top three risks and top three next actions from deterministic stats plus AI advisory
+  review.
+- Add a project-specific Docs Librarian voice for one light-hearted maintainer recommendation.
+- Choose exactly one top-ranked document for high-touch output using transparent ranking.
+- Generate AI issue body drafts while keeping issue creation/update decisions deterministic.
+- Generate patch proposal artifacts for high-confidence stale docs; never auto-merge them.
+- Add implicit doc/code relationship suggestions as advisory evidence only.
+- Track provenance per feature: executive summary, semantic review, issue body, patch proposal,
+  PR comment, and implicit relationship suggestions.
 
 ## Near-Term Decision
 
@@ -313,3 +337,10 @@ Use Octokit for GitHub-backed history lookup in CI, with a typed Flue tool bound
 Add Varlock as a follow-on configuration hardening step. It is most useful once the required
 environment contract is stable enough to encode, but it can be introduced earlier if secret and
 variable naming keeps slowing the workflow down.
+
+## Current AI Advisory Decision
+
+ADR-020 defines the next phase now that the deterministic Effect pipeline is stable. The gate stays
+deterministic, while AI is used for semantic impact review, executive summaries, issue wording,
+patch proposals, implicit relationship suggestions, and one top-ranked Docs Librarian
+recommendation.
