@@ -1,11 +1,12 @@
+import type { Dirent } from "node:fs";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
 import { type FlueContext, type ToolDef, Type } from "@flue/sdk/client";
 import { Octokit } from "@octokit/rest";
 import { Data, Effect, Layer, Match, Option, Redacted, Schema, Struct } from "effect";
 import * as Record from "effect/Record";
-import type { Dirent } from "node:fs";
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
 import * as v from "valibot";
+import { AppConfig, AppConfigLive } from "../../src/config/AppConfig";
 import { httpUrl } from "../../src/Domain";
 import {
 	freshnessReviewInputSchema,
@@ -26,7 +27,6 @@ import {
 } from "../../src/MarkdownDoc";
 import { OdsClient, OdsClientDefault } from "../../src/OdsClient";
 import { UrlChecker, UrlCheckerDefault } from "../../src/UrlChecker";
-import { AppConfig, AppConfigLive } from "../../src/config/AppConfig";
 
 export const triggers = { webhook: true };
 
@@ -349,7 +349,11 @@ const githubHistory: ToolDef = {
 				yield* Schema.decodeUnknownEffect(githubHistoryArgsSchema)(args);
 			const token = yield* githubToken;
 			return yield* makeGithubHistoryResult(token, owner, repo, ref, paths);
-		}).pipe(Effect.map(encodeGithubHistoryResult), Effect.provide(AppConfigLive), Effect.runPromise),
+		}).pipe(
+			Effect.map(encodeGithubHistoryResult),
+			Effect.provide(AppConfigLive),
+			Effect.runPromise,
+		),
 };
 
 const reviewFreshnessTool: ToolDef = {
@@ -497,6 +501,67 @@ const freshnessSchema = v.object({
 	shouldFail: v.boolean(),
 });
 
+type FreshnessResult = v.InferOutput<typeof freshnessSchema>;
+
+const maxRateLimitRetries = 3;
+const defaultRateLimitRetryMs = 10_000;
+const rateLimitRetryBufferMs = 2_000;
+
+const unknownErrorMessage = (error: unknown) =>
+	Match.value(error instanceof Error).pipe(
+		Match.when(true, () => (error as Error).message),
+		Match.orElse(() => String(error)),
+	);
+
+const rateLimitRetryDelayMs = (error: unknown) => {
+	const message = unknownErrorMessage(error);
+	const retryAfterSeconds = Number(message.match(/try again in ([\d.]+)s/iu)?.[1] ?? NaN);
+	const retryDelay = Match.value(Number.isFinite(retryAfterSeconds)).pipe(
+		Match.when(true, () => Math.ceil(retryAfterSeconds * 1000) + rateLimitRetryBufferMs),
+		Match.orElse(() => defaultRateLimitRetryMs),
+	);
+
+	return Match.value(/rate limit|tokens per min|TPM/iu.test(message)).pipe(
+		Match.when(true, () => Option.some(retryDelay)),
+		Match.orElse(() => Option.none<number>()),
+	);
+};
+
+const sleep = (delayMs: number) =>
+	new Promise<void>((resolve) => {
+		setTimeout(resolve, delayMs);
+	});
+
+const reject = (error: unknown): Promise<never> => Promise.reject(error);
+
+const shouldRetryRateLimit = (attempt: number) => attempt < maxRateLimitRetries;
+
+const sleepAfterRateLimit = (delayMs: number) => {
+	process.stderr.write(`[doc-freshness] OpenAI rate limit hit; retrying in ${delayMs}ms.\n`);
+	return sleep(delayMs);
+};
+
+const retryOrRejectRateLimit = (
+	runAgain: () => Promise<FreshnessResult>,
+	error: unknown,
+	attempt: number,
+	delayMs: number,
+) =>
+	Match.value(shouldRetryRateLimit(attempt)).pipe(
+		Match.when(true, () => sleepAfterRateLimit(delayMs).then(runAgain)),
+		Match.orElse(() => reject(error)),
+	);
+
+const retryRateLimit = (
+	runAgain: () => Promise<FreshnessResult>,
+	error: unknown,
+	attempt: number,
+) =>
+	Option.match(rateLimitRetryDelayMs(error), {
+		onNone: () => reject(error),
+		onSome: (delayMs) => retryOrRejectRateLimit(runAgain, error, attempt, delayMs),
+	});
+
 const analyticsResultSchema = Schema.Struct({
 	report: Schema.String,
 	pageCount: Schema.Number.check(Schema.isInt(), Schema.isGreaterThanOrEqualTo(0)),
@@ -622,11 +687,9 @@ export default async function ({ init, payload }: FlueContext) {
 
 	const agent = await init({
 		sandbox: "local",
-		model: "openai/gpt-4o",
+		model: "openai/gpt-5-nano",
 		tools: [listDocs, readDoc, githubHistory, reviewFreshnessTool, checkUrl, fetchAnalytics],
 	});
-
-	const session = await agent.session();
 
 	const repoPath = (payload.repoPath as string | undefined) ?? "/workspace";
 	const glob = (payload.glob as string | undefined) ?? "**/*.md";
@@ -634,17 +697,23 @@ export default async function ({ init, payload }: FlueContext) {
 	const [repositoryOwner = "", repositoryName = ""] = repository.split("/");
 	const owner = (payload.owner as string | undefined) ?? repositoryOwner;
 	const repo = (payload.repo as string | undefined) ?? repositoryName;
-	const ref = (payload.ref as string | undefined) ?? preferredRef(config.githubSha, config.githubRef);
+	const ref =
+		(payload.ref as string | undefined) ?? preferredRef(config.githubSha, config.githubRef);
 	const rawSignals = v.parse(signalsPayloadSchema, payload.signals);
 	const signals = Option.map(Option.fromNullishOr(rawSignals), makeSignals);
 	const checkStalenessArgs = makeCheckStalenessArgs(repoPath, glob, owner, repo, ref, signals);
+	const runCheckStaleness = (attempt: number): Promise<FreshnessResult> =>
+		agent.sessions
+			.create(`check-staleness-${Date.now()}-${attempt}`)
+			.then((session) =>
+				session.skill("check-staleness", {
+					args: checkStalenessArgs,
+					result: freshnessSchema,
+				}),
+			)
+			.catch((error: unknown) =>
+				retryRateLimit(() => runCheckStaleness(attempt + 1), error, attempt),
+			);
 
-	return await Match.value(mode).pipe(
-		Match.orElse(() =>
-			session.skill("check-staleness", {
-				args: checkStalenessArgs,
-				result: freshnessSchema,
-			}),
-		),
-	);
+	return await Match.value(mode).pipe(Match.orElse(() => runCheckStaleness(0)));
 }
