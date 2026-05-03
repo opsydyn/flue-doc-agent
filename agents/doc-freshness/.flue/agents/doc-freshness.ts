@@ -7,6 +7,10 @@ import { Data, Effect, Layer, Match, Option, Redacted, Schema, Struct } from "ef
 import * as Record from "effect/Record";
 import * as v from "valibot";
 import { AppConfig, AppConfigLive } from "../../src/config/AppConfig";
+import {
+	type DeterministicFreshnessSignals,
+	runDeterministicFreshness,
+} from "../../src/DeterministicFreshness";
 import { httpUrl } from "../../src/Domain";
 import {
 	freshnessReviewInputSchema,
@@ -671,6 +675,16 @@ const preferredRef = (sha: string, refName: string) =>
 		Match.orElse(() => refName),
 	);
 
+const useAgentSkillMode = (mode: string) => mode === "agent" || mode === "agent-check-staleness";
+
+const deterministicSignals = (
+	signals: Option.Option<Signals>,
+): Option.Option<DeterministicFreshnessSignals> =>
+	Option.map(signals, (availableSignals) => ({
+		pageviews: availableSignals.pageviews,
+		pageviewThreshold: availableSignals.pageviewThreshold,
+	}));
+
 // -----------------------------------------------------------------------------
 // Handler
 // -----------------------------------------------------------------------------
@@ -685,12 +699,6 @@ export default async function ({ init, payload }: FlueContext) {
 
 	if (mode === "analytics") return await Effect.runPromise(makeAnalyticsResult);
 
-	const agent = await init({
-		sandbox: "local",
-		model: "openai/gpt-4.1-mini",
-		tools: [listDocs, readDoc, githubHistory, reviewFreshnessTool, checkUrl, fetchAnalytics],
-	});
-
 	const repoPath = (payload.repoPath as string | undefined) ?? "/workspace";
 	const glob = (payload.glob as string | undefined) ?? "**/*.md";
 	const repository = (payload.repository as string | undefined) ?? config.githubRepository;
@@ -702,18 +710,42 @@ export default async function ({ init, payload }: FlueContext) {
 	const rawSignals = v.parse(signalsPayloadSchema, payload.signals);
 	const signals = Option.map(Option.fromNullishOr(rawSignals), makeSignals);
 	const checkStalenessArgs = makeCheckStalenessArgs(repoPath, glob, owner, repo, ref, signals);
-	const runCheckStaleness = (attempt: number): Promise<FreshnessResult> =>
-		agent.sessions
-			.create(`check-staleness-${Date.now()}-${attempt}`)
-			.then((session) =>
-				session.skill("check-staleness", {
-					args: checkStalenessArgs,
-					result: freshnessSchema,
-				}),
-			)
-			.catch((error: unknown) =>
-				retryRateLimit(() => runCheckStaleness(attempt + 1), error, attempt),
-			);
+	const runDeterministicCheckStaleness = () =>
+		Effect.runPromise(
+			runDeterministicFreshness({
+				repoPath,
+				glob,
+				owner,
+				repo,
+				ref,
+				githubToken: Redacted.value(config.githubToken),
+				signals: deterministicSignals(signals),
+			}),
+		).then((result) => v.parse(freshnessSchema, result));
+	const runAgentCheckStaleness = async () => {
+		const agent = await init({
+			sandbox: "local",
+			model: "openai/gpt-4.1-mini",
+			tools: [listDocs, readDoc, githubHistory, reviewFreshnessTool, checkUrl, fetchAnalytics],
+		});
+		const runCheckStaleness = (attempt: number): Promise<FreshnessResult> =>
+			agent.sessions
+				.create(`check-staleness-${Date.now()}-${attempt}`)
+				.then((session) =>
+					session.skill("check-staleness", {
+						args: checkStalenessArgs,
+						result: freshnessSchema,
+					}),
+				)
+				.catch((error: unknown) =>
+					retryRateLimit(() => runCheckStaleness(attempt + 1), error, attempt),
+				);
 
-	return await Match.value(mode).pipe(Match.orElse(() => runCheckStaleness(0)));
+		return await runCheckStaleness(0);
+	};
+
+	return await Match.value(useAgentSkillMode(mode)).pipe(
+		Match.when(true, () => runAgentCheckStaleness()),
+		Match.orElse(() => runDeterministicCheckStaleness()),
+	);
 }
