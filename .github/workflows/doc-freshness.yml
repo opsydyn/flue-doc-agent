@@ -52,7 +52,7 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
           PAGEVIEW_THRESHOLD: ${{ github.event.inputs.pageview_threshold || '50' }}
           DOCS_BASE_PATH: /flue-doc-agent
-        run: varlock load --show-all
+        run: bun run env:check
 
       - name: Fetch analytics signals
         id: signals
@@ -130,7 +130,7 @@ jobs:
           ODS_SITE_ID: ${{ secrets.ODS_SITE_ID }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          varlock run -- flue run doc-freshness --target node \
+          "$GITHUB_WORKSPACE/node_modules/.bin/varlock" run --path "$GITHUB_WORKSPACE/.env.schema" -- flue run doc-freshness --target node \
             --id "analytics-${{ github.run_id }}" \
             --payload '{"mode":"analytics"}' \
             > /tmp/analytics-output.txt \
@@ -166,7 +166,7 @@ jobs:
             --arg ref "$GITHUB_SHA" \
             --argjson signals '${{ steps.signals.outputs.signals }}' \
             '{repoPath:$repoPath,glob:$glob,owner:$owner,repo:$repo,ref:$ref,signals:$signals}')
-          varlock run -- flue run doc-freshness --target node \
+          "$GITHUB_WORKSPACE/node_modules/.bin/varlock" run --path "$GITHUB_WORKSPACE/.env.schema" -- flue run doc-freshness --target node \
             --id "freshness-${{ github.run_id }}" --payload "$PAYLOAD" \
             > /tmp/freshness-output.txt \
             2> /tmp/freshness.log

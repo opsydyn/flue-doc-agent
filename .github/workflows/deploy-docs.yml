@@ -50,7 +50,7 @@ jobs:
           GITHUB_SHA: ${{ github.sha }}
           PAGEVIEW_THRESHOLD: '50'
           DOCS_BASE_PATH: /flue-doc-agent
-        run: varlock load --show-all
+        run: bun run env:check
 
       - name: Build docs
         working-directory: packages/docs
