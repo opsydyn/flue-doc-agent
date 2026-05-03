@@ -1,7 +1,10 @@
 import type { Dirent } from "node:fs";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { Match, Option, Record, Schema } from "effect";
+import { Effect, Match, Option, Record, Schema } from "effect";
+import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient";
+import * as HttpClient from "effect/unstable/http/HttpClient";
+import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
 import {
 	type StarlightRouteMap,
 	sourcePathForPage,
@@ -101,7 +104,6 @@ const OpenAiSummaryResponseSchema = Schema.Struct({
 	),
 });
 const decodeJsonOption = Schema.decodeUnknownOption(Schema.UnknownFromJsonString);
-const encodeJson = Schema.encodeSync(Schema.UnknownFromJsonString);
 const decodeOdsOption = Schema.decodeUnknownOption(OdsResponseSchema);
 const decodeFreshnessOption = Schema.decodeUnknownOption(FreshnessResultSchema);
 const decodeOpenAiSummaryOption = Schema.decodeUnknownOption(OpenAiSummaryResponseSchema);
@@ -304,44 +306,39 @@ const openAiExecutiveSummaryFromText = (freshness: FreshnessResult, model: strin
 		onSome: (response) => openAiExecutiveSummaryFromResponse(freshness, model, response),
 	});
 
-const fetchOpenAiExecutiveSummary = async (
-	freshness: FreshnessResult,
-	model: string,
-	apiKey: string,
-) =>
-	fetch("https://api.openai.com/v1/chat/completions", {
-		method: "POST",
-		headers: {
-			Authorization: `Bearer ${apiKey}`,
-			"Content-Type": "application/json",
+const openAiSummaryRequestBody = (freshness: FreshnessResult, model: string) => ({
+	model,
+	temperature: 0.6,
+	max_tokens: 220,
+	messages: [
+		{
+			role: "system",
+			content:
+				"You write concise executive summaries for engineering documentation reports. Be useful, original, and safe.",
 		},
-		body: encodeJson({
-			model,
-			temperature: 0.6,
-			max_tokens: 220,
-			messages: [
-				{
-					role: "system",
-					content:
-						"You write concise executive summaries for engineering documentation reports. Be useful, original, and safe.",
-				},
-				{ role: "user", content: executiveSummaryPrompt(freshness) },
-			],
-		}),
-	})
-		.then((response) =>
-			response.text().then((text) =>
-				Match.value(response.ok).pipe(
-					Match.when(true, () => openAiExecutiveSummaryFromText(freshness, model, text)),
-					Match.orElse(() =>
-						fallbackExecutiveSummary(freshness, model, `OpenAI request failed: ${response.status}`),
-					),
-				),
-			),
-		)
-		.catch((error: unknown) =>
-			fallbackExecutiveSummary(freshness, model, `OpenAI request error: ${String(error)}`),
-		);
+		{ role: "user", content: executiveSummaryPrompt(freshness) },
+	],
+});
+
+const fetchOpenAiExecutiveSummaryEffect = Effect.fn(
+	"WriteStarlightReports.fetchOpenAiExecutiveSummary",
+)(function* (freshness: FreshnessResult, model: string, apiKey: string) {
+	const client = yield* HttpClient.HttpClient;
+	const request = HttpClientRequest.post("https://api.openai.com/v1/chat/completions").pipe(
+		HttpClientRequest.bearerToken(apiKey),
+		HttpClientRequest.accept("application/json"),
+		HttpClientRequest.bodyJsonUnsafe(openAiSummaryRequestBody(freshness, model)),
+	);
+	const response = yield* client.execute(request).pipe(Effect.timeout("10 seconds"));
+	const text = yield* response.text;
+
+	return Match.value(response.status >= 200 && response.status < 300).pipe(
+		Match.when(true, () => openAiExecutiveSummaryFromText(freshness, model, text)),
+		Match.orElse(() =>
+			fallbackExecutiveSummary(freshness, model, `OpenAI request failed: ${response.status}`),
+		),
+	);
+});
 
 const executiveSummary = (freshness: FreshnessResult) => {
 	const model = summaryModel();
@@ -349,7 +346,17 @@ const executiveSummary = (freshness: FreshnessResult) => {
 	return Option.match(openAiApiKey(), {
 		onNone: () =>
 			Promise.resolve(fallbackExecutiveSummary(freshness, model, "OPENAI_API_KEY not set")),
-		onSome: (apiKey) => fetchOpenAiExecutiveSummary(freshness, model, apiKey),
+		onSome: (apiKey) =>
+			Effect.runPromise(
+				fetchOpenAiExecutiveSummaryEffect(freshness, model, apiKey).pipe(
+					Effect.catchCause((cause) =>
+						Effect.succeed(
+							fallbackExecutiveSummary(freshness, model, `OpenAI request error: ${String(cause)}`),
+						),
+					),
+					Effect.provide(FetchHttpClient.layer),
+				),
+			),
 	});
 };
 
