@@ -19,12 +19,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
+      actions: write
       contents: write
+      issues: write
 
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # full history required for git log staleness checks
+          fetch-depth: 0  # keep generated report commits on top of complete local history
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -157,6 +159,10 @@ jobs:
             --output /tmp/freshness-result.json
           jq -er '.report' /tmp/freshness-result.json >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Emit freshness annotations
+        working-directory: agents/doc-freshness
+        run: bun scripts/emit-github-annotations.ts --input /tmp/freshness-result.json
+
       - name: Generate Starlight freshness pages
         run: |
           bun agents/doc-freshness/scripts/write-starlight-reports.ts \
@@ -171,6 +177,7 @@ jobs:
         run: bun run build
 
       - name: Commit generated freshness reports
+        id: commit-reports
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -178,7 +185,23 @@ jobs:
           if ! git diff --cached --quiet; then
             git commit -m "Update generated doc freshness reports"
             git push
+            echo "committed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "committed=false" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Dispatch docs deploy
+        if: steps.commit-reports.outputs.committed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy-docs.yml --ref main
+
+      - name: Sync critical freshness issues
+        working-directory: agents/doc-freshness
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bun scripts/sync-github-freshness-issues.ts --input /tmp/freshness-result.json
 
       - name: Apply freshness gate
         run: jq -e '.shouldFail | not' /tmp/freshness-result.json > /dev/null
