@@ -100,18 +100,21 @@ Every model-backed feature should append provenance like this:
 type AiFeatureProvenance = {
   readonly feature:
     | "executive-summary"
+    | "docs-librarian-pick"
     | "semantic-impact"
     | "implicit-relationships"
     | "issue-body"
     | "patch-proposal"
     | "pr-comment"
-  readonly provider: "openai"
+  readonly source: "openai" | "fallback"
+  readonly provider: "openai" | "none"
   readonly model: string
   readonly inputTokens: number
   readonly outputTokens: number
   readonly totalTokens: number
   readonly itemCount: number
   readonly generatedAt: string
+  readonly note?: string
 }
 ```
 
@@ -317,10 +320,12 @@ If no previous snapshot exists, the report should say trend is unavailable.
 
 ### Slice 6: Draft PR workflow
 
-- Create a draft PR only when the patch proposal validates cleanly.
-- Add one light-hearted Docs Librarian PR comment.
+- Generate a draft PR recommendation only when the patch proposal validates cleanly.
+- Do not open a PR automatically in the first implementation; keep the recommendation as a report
+  artifact for human review or a later workflow step.
+- Add one light-hearted Docs Librarian PR comment draft.
 - Require human review before merge.
-- Include provenance and model usage in the PR body.
+- Include provenance and model usage in the recommendation artifact.
 
 ### Slice 7: Implicit relationships
 
@@ -328,6 +333,23 @@ If no previous snapshot exists, the report should say trend is unavailable.
 - Validate paths and history deterministically.
 - Render relationships separately from explicit evidence.
 - Decide later whether implicit relationships can influence priority.
+
+## Implementation Notes
+
+Implemented on 2026-05-04 as a non-blocking advisory pipeline:
+
+- `generate-ai-advisory.ts` reads the deterministic freshness JSON, calls `gpt-4.1-mini` for
+  semantic impact and patch-proposal artifacts when `OPENAI_API_KEY` is available, and otherwise
+  writes deterministic fallback advisory JSON.
+- Issue body drafts are optional input to `sync-github-freshness-issues.ts`. The create/update/no-op
+  decision still comes from deterministic critical freshness evidence and stable hidden markers.
+- Patch proposals and draft PR recommendations are report/workflow-summary artifacts only. The
+  workflow does not mutate documentation files, open PRs, or merge AI-authored text.
+- Implicit relationships start with a deterministic low-confidence scanner over validated repository
+  paths. They are rendered separately from explicit freshness evidence and do not affect priority,
+  annotations, issue decisions, or `shouldFail`.
+- `write-starlight-reports.ts` renders AI issue body drafts, patch proposal artifacts, draft PR
+  recommendations, implicit relationships, and one provenance row per generated feature.
 
 ## Model Strategy
 

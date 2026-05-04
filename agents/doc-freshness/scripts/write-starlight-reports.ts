@@ -5,7 +5,19 @@ import { Effect, Match, Option, Record, Schema } from "effect";
 import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient";
 import * as HttpClient from "effect/unstable/http/HttpClient";
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
-import { type AiFeatureProvenance, aiFeatureProvenanceSchema } from "../src/AiAdvisory";
+import {
+	type AdvisoryAction,
+	type AdvisoryRisk,
+	type AiAdvisoryReport,
+	type AiFeatureProvenance,
+	aiAdvisoryReportSchema,
+	aiFeatureProvenanceSchema,
+	type DocsLibrarianPick,
+	type DraftPrRecommendation,
+	type ImplicitDocCodeRelationship,
+	type IssueBodyDraft,
+	type PatchProposal,
+} from "../src/AiAdvisory";
 import {
 	type StarlightRouteMap,
 	sourcePathForPage,
@@ -97,6 +109,7 @@ const OpenAiSummaryResponseSchema = Schema.Struct({
 const decodeJsonOption = Schema.decodeUnknownOption(Schema.UnknownFromJsonString);
 const decodeOdsOption = Schema.decodeUnknownOption(OdsResponseSchema);
 const decodeFreshnessOption = Schema.decodeUnknownOption(FreshnessResultSchema);
+const decodeAdvisoryOption = Schema.decodeUnknownOption(aiAdvisoryReportSchema);
 const decodeOpenAiSummaryOption = Schema.decodeUnknownOption(OpenAiSummaryResponseSchema);
 
 const args = process.argv.slice(2).reduce<Record.ReadonlyRecord<string, string>>(
@@ -164,6 +177,32 @@ const readFreshnessJson = async (filePath: string) =>
 			summary: {},
 			report: "No freshness report was returned.",
 		}));
+
+const emptyAdvisoryReport = (): AiAdvisoryReport =>
+	aiAdvisoryReportSchema.make({
+		semanticReviews: [],
+		rankings: [],
+		risks: [],
+		actions: [],
+		issueBodyDrafts: [],
+		implicitRelationships: [],
+		provenance: [],
+	});
+
+const readAdvisoryJsonFromFile = async (filePath: string) =>
+	readFile(filePath, "utf8")
+		.then((content) =>
+			Option.getOrElse(Option.flatMap(decodeJsonOption(content), decodeAdvisoryOption), () =>
+				emptyAdvisoryReport(),
+			),
+		)
+		.catch(emptyAdvisoryReport);
+
+const readAdvisoryJson = async (filePath: string) =>
+	Match.value(filePath.trim().length > 0).pipe(
+		Match.when(true, () => readAdvisoryJsonFromFile(filePath)),
+		Match.orElse(() => Promise.resolve(emptyAdvisoryReport())),
+	);
 
 const escapeTableCell = (value: unknown) =>
 	String(value ?? "")
@@ -380,6 +419,140 @@ const provenanceTable = (provenances: ReadonlyArray<AiFeatureProvenance>) => `##
 | --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- |
 ${provenances.map(provenanceRow).join("\n") || "| No AI features ran | fallback | none | n/a | 0 | 0 | 0 | 0 | n/a | n/a |"}`;
 
+const rankingScoreForPath = (advisory: AiAdvisoryReport, path: string) =>
+	Option.match(Option.fromNullishOr(advisory.rankings.find((ranking) => ranking.path === path)), {
+		onNone: () => "n/a",
+		onSome: (ranking) => ranking.finalScore.toLocaleString("en-GB"),
+	});
+
+const advisoryReviewRow =
+	(advisory: AiAdvisoryReport) => (review: AiAdvisoryReport["semanticReviews"][number]) =>
+		`| ${escapeTableCell(review.path)} | ${escapeTableCell(
+			review.staleClassification,
+		)} | ${escapeTableCell(review.semanticImpact)} | ${escapeTableCell(
+			review.confidence,
+		)} | ${rankingScoreForPath(advisory, review.path)} | ${escapeTableCell(
+			review.rationale,
+		)} | ${escapeTableCell(review.affectedSections.join("; ") || "n/a")} | ${escapeTableCell(
+			review.suggestedFixes.join("; ") || "n/a",
+		)} |`;
+
+const advisoryReviewMarkdown = (advisory: AiAdvisoryReport) => `## AI Advisory Review
+
+| Document | Classification | Semantic impact | Confidence | Score | Rationale | Affected sections | Suggested fixes |
+| --- | --- | --- | --- | ---: | --- | --- | --- |
+${advisory.semanticReviews.map(advisoryReviewRow(advisory)).join("\n") || "| No semantic advisory review generated | needs-review | none | low | 0 | No stale or warning documents were reviewed. | n/a | n/a |"}`;
+
+const advisoryRiskRow = (risk: AdvisoryRisk) =>
+	`| ${escapeTableCell(risk.path)} | ${escapeTableCell(risk.severity)} | ${escapeTableCell(
+		risk.reason,
+	)} |`;
+
+const advisoryActionRow = (action: AdvisoryAction) =>
+	`| ${escapeTableCell(action.path)} | ${escapeTableCell(action.priority)} | ${escapeTableCell(
+		action.action,
+	)} |`;
+
+const advisoryExecutiveMarkdown = (advisory: AiAdvisoryReport) => {
+	const risks = advisory.risks ?? [];
+	const actions = advisory.actions ?? [];
+
+	return `### Top Advisory Risks
+
+| Document | Severity | Reason |
+| --- | --- | --- |
+${risks.map(advisoryRiskRow).join("\n") || "| No advisory risks ranked | low | Advisory data unavailable. |"}
+
+### Top Next Actions
+
+| Document | Priority | Action |
+| --- | --- | --- |
+${actions.map(advisoryActionRow).join("\n") || "| No advisory actions ranked | low | Advisory data unavailable. |"}`;
+};
+
+const librarianPickTable = (pick: DocsLibrarianPick) => `> ${escapeTableCell(pick.note)}
+
+| Document | Score | Why | Suggested action |
+| --- | ---: | --- | --- |
+| ${escapeTableCell(pick.path)} | ${pick.finalScore.toLocaleString("en-GB")} | ${escapeTableCell(
+	pick.reason,
+)} | ${escapeTableCell(pick.action)} |`;
+
+const docsLibrarianPickMarkdown = (advisory: AiAdvisoryReport) => `## Docs Librarian's Pick
+
+${Option.match(Option.fromNullishOr(advisory.librarianPick), {
+	onNone: () => "No ranked advisory candidate was available for a librarian pick.",
+	onSome: librarianPickTable,
+})}`;
+
+const issueBodyDraftRow = (draft: IssueBodyDraft) =>
+	`| ${escapeTableCell(draft.path)} | ${escapeTableCell(draft.title)} | ${escapeTableCell(
+		draft.marker,
+	)} |`;
+
+const issueBodyDraftMarkdown = (advisory: AiAdvisoryReport) => {
+	const drafts = advisory.issueBodyDrafts ?? [];
+
+	return `## AI Issue Body Drafts
+
+| Document | Title | Stable marker |
+| --- | --- | --- |
+${drafts.map(issueBodyDraftRow).join("\n") || "| No critical issue body drafts generated | n/a | n/a |"}`;
+};
+
+const patchProposalTable = (proposal: PatchProposal) =>
+	`| ${escapeTableCell(proposal.path)} | ${escapeTableCell(proposal.status)} | ${escapeTableCell(
+		proposal.title,
+	)} | ${escapeTableCell(proposal.rationale)} | ${escapeTableCell(
+		proposal.proposedChanges.join("; ") || "n/a",
+	)} | ${escapeTableCell(String(proposal.requiresHumanReview))} |`;
+
+const patchProposalMarkdown = (advisory: AiAdvisoryReport) => `## Patch Proposal Artifact
+
+${Option.match(Option.fromNullishOr(advisory.patchProposal), {
+	onNone: () => "No patch proposal artifact was generated.",
+	onSome: (proposal) => `| Document | Status | Title | Rationale | Proposed changes | Human review |
+| --- | --- | --- | --- | --- | --- |
+${patchProposalTable(proposal)}
+
+${proposal.markdownArtifact}`,
+})}`;
+
+const draftPrTable = (draftPr: DraftPrRecommendation) =>
+	`| ${escapeTableCell(
+		draftPr.status,
+	)} | ${escapeTableCell(draftPr.branchName)} | ${escapeTableCell(
+		draftPr.title,
+	)} | ${escapeTableCell(draftPr.reason)} | ${escapeTableCell(draftPr.comment)} |`;
+
+const draftPrMarkdown = (advisory: AiAdvisoryReport) => `## Draft PR Recommendation
+
+${Option.match(Option.fromNullishOr(advisory.draftPr), {
+	onNone: () => "No draft PR recommendation was generated.",
+	onSome: (draftPr) => `| Status | Branch | Title | Reason | Proposed comment |
+| --- | --- | --- | --- | --- |
+${draftPrTable(draftPr)}`,
+})}`;
+
+const implicitRelationshipRow = (relationship: ImplicitDocCodeRelationship) =>
+	`| ${escapeTableCell(relationship.docPath)} | ${escapeTableCell(
+		relationship.codePath,
+	)} | ${escapeTableCell(relationship.relationshipType)} | ${escapeTableCell(
+		relationship.confidence,
+	)} | ${escapeTableCell(relationship.reason)} |`;
+
+const implicitRelationshipsMarkdown = (advisory: AiAdvisoryReport) => {
+	const relationships = advisory.implicitRelationships ?? [];
+
+	return `## Implicit Doc/Code Relationship Suggestions
+
+These suggestions are advisory only and do not affect freshness scoring.
+
+| Document | Code path | Type | Confidence | Reason |
+| --- | --- | --- | --- | --- |
+${relationships.map(implicitRelationshipRow).join("\n") || "| No implicit relationships suggested | n/a | implicit-ai-suggested | low | n/a |"}`;
+};
+
 const pageviewsMarkdown = (rows: ReadonlyArray<PageviewRow>) => {
 	const totalViews = rows.reduce((total, row) => total + row.views, 0);
 	const tableRows = rows.map(
@@ -408,6 +581,7 @@ const freshnessMarkdown = (
 	pageviewRows: ReadonlyArray<PageviewRow>,
 	routes: StarlightRouteMap,
 	executive: ExecutiveSummary,
+	advisory: AiAdvisoryReport,
 ) => {
 	const files = freshness.files;
 	const summary = freshness.summary;
@@ -447,7 +621,21 @@ _Generated: ${formatDate()} UTC._
 
 ${executive.text}
 
-${provenanceTable([executive.provenance])}
+${advisoryExecutiveMarkdown(advisory)}
+
+${docsLibrarianPickMarkdown(advisory)}
+
+${advisoryReviewMarkdown(advisory)}
+
+${issueBodyDraftMarkdown(advisory)}
+
+${patchProposalMarkdown(advisory)}
+
+${draftPrMarkdown(advisory)}
+
+${implicitRelationshipsMarkdown(advisory)}
+
+${provenanceTable([executive.provenance, ...advisory.provenance])}
 
 ## Overview
 
@@ -481,6 +669,7 @@ const outDir = argValue("out", "packages/docs/src/content/docs/analytics");
 const docsRoot = argValue("docsRoot", "packages/docs/src/content/docs");
 const ods = await readOdsJson(argValue("ods", "/tmp/ods-pageviews.json"));
 const freshness = await readFreshnessJson(argValue("freshness", "/tmp/freshness-result.json"));
+const advisory = await readAdvisoryJson(argValue("advisory", ""));
 const pageviewRows = pageviewsFromOds(ods);
 const routes = starlightRouteMap(docsRoot, await listMarkdownFiles(docsRoot));
 const summary = await executiveSummary(freshness);
@@ -489,5 +678,5 @@ await mkdir(outDir, { recursive: true });
 await writeFile(path.join(outDir, "pageviews.md"), pageviewsMarkdown(pageviewRows));
 await writeFile(
 	path.join(outDir, "freshness.md"),
-	freshnessMarkdown(freshness, pageviewRows, routes, summary),
+	freshnessMarkdown(freshness, pageviewRows, routes, summary, advisory),
 );

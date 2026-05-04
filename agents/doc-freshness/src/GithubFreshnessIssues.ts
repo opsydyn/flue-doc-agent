@@ -1,4 +1,5 @@
 import { Match, Option, Schema } from "effect";
+import { type IssueBodyDraft, issueBodyDraftSchema } from "./AiAdvisory";
 import { freshnessReviewedFileSchema } from "./FreshnessReview";
 
 export const githubFreshnessIssueInputSchema = Schema.Struct({
@@ -15,6 +16,14 @@ export const githubOpenIssueSchema = Schema.Struct({
 	body: Schema.optional(Schema.String),
 });
 
+export const githubFreshnessIssueAdvisorySchema = Schema.Struct({
+	issueBodyDrafts: Schema.optional(Schema.Array(issueBodyDraftSchema)),
+});
+
+export const githubFreshnessIssueAdvisoryJsonSchema = Schema.fromJsonString(
+	githubFreshnessIssueAdvisorySchema,
+);
+
 export const githubCreateFreshnessIssueSchema = Schema.Struct({
 	_tag: Schema.Literal("CreateGithubFreshnessIssue"),
 	title: Schema.String,
@@ -29,6 +38,7 @@ export const githubUpdateFreshnessIssueSchema = Schema.Struct({
 });
 
 export type GithubFreshnessIssueInput = typeof githubFreshnessIssueInputSchema.Type;
+export type GithubFreshnessIssueAdvisory = typeof githubFreshnessIssueAdvisorySchema.Type;
 export type GithubOpenIssue = typeof githubOpenIssueSchema.Type;
 export type GithubFreshnessIssueAction =
 	| typeof githubCreateFreshnessIssueSchema.Type
@@ -38,7 +48,9 @@ const issueMarker = (path: string) => `<!-- doc-freshness:${path} -->`;
 
 const issueTitle = (path: string) => `Critical doc freshness: ${path}`;
 
-const issueBody = (file: typeof freshnessReviewedFileSchema.Type) => `${issueMarker(file.path)}
+const deterministicIssueBody = (
+	file: typeof freshnessReviewedFileSchema.Type,
+) => `${issueMarker(file.path)}
 
 ## Critical documentation freshness issue
 
@@ -57,6 +69,29 @@ ${file.issues.map((issue) => `- ${issue}`).join("\n") || "- Review the freshness
 Update the document so it reflects the referenced source files, then rerun the doc freshness
 workflow.`;
 
+const draftForFile = (
+	file: typeof freshnessReviewedFileSchema.Type,
+	drafts: ReadonlyArray<IssueBodyDraft>,
+) => Option.fromNullishOr(drafts.find((draft) => draft.path === file.path));
+
+const draftBodyWithMarker = (
+	file: typeof freshnessReviewedFileSchema.Type,
+	draft: IssueBodyDraft,
+) =>
+	Match.value(draft.body.includes(issueMarker(file.path))).pipe(
+		Match.when(true, () => draft.body),
+		Match.orElse(() => `${issueMarker(file.path)}\n${draft.body}`),
+	);
+
+const issueBody = (
+	file: typeof freshnessReviewedFileSchema.Type,
+	drafts: ReadonlyArray<IssueBodyDraft>,
+) =>
+	Option.match(draftForFile(file, drafts), {
+		onNone: () => deterministicIssueBody(file),
+		onSome: (draft) => draftBodyWithMarker(file, draft),
+	});
+
 const isCriticalFile = (file: typeof freshnessReviewedFileSchema.Type) =>
 	file.priority === "critical";
 
@@ -69,6 +104,7 @@ const existingIssueForPath = (path: string, issues: ReadonlyArray<GithubOpenIssu
 const actionForFile = (
 	file: typeof freshnessReviewedFileSchema.Type,
 	issues: ReadonlyArray<GithubOpenIssue>,
+	drafts: ReadonlyArray<IssueBodyDraft>,
 ): Option.Option<GithubFreshnessIssueAction> =>
 	Option.match(existingIssueForPath(file.path, issues), {
 		onNone: () =>
@@ -76,11 +112,13 @@ const actionForFile = (
 				githubCreateFreshnessIssueSchema.make({
 					_tag: "CreateGithubFreshnessIssue",
 					title: issueTitle(file.path),
-					body: issueBody(file),
+					body: issueBody(file, drafts),
 				}),
 			),
 		onSome: (issue) =>
-			Match.value(issue.body === issueBody(file) && issue.title === issueTitle(file.path)).pipe(
+			Match.value(
+				issue.body === issueBody(file, drafts) && issue.title === issueTitle(file.path),
+			).pipe(
 				Match.when(true, () => Option.none<GithubFreshnessIssueAction>()),
 				Match.orElse(() =>
 					Option.some(
@@ -88,7 +126,7 @@ const actionForFile = (
 							_tag: "UpdateGithubFreshnessIssue",
 							number: issue.number,
 							title: issueTitle(file.path),
-							body: issueBody(file),
+							body: issueBody(file, drafts),
 						}),
 					),
 				),
@@ -98,9 +136,10 @@ const actionForFile = (
 export const planGithubFreshnessIssues = (
 	input: GithubFreshnessIssueInput,
 	openIssues: ReadonlyArray<GithubOpenIssue>,
+	advisory: GithubFreshnessIssueAdvisory = {},
 ): ReadonlyArray<GithubFreshnessIssueAction> =>
 	input.files.filter(isCriticalFile).flatMap((file) =>
-		Option.match(actionForFile(file, openIssues), {
+		Option.match(actionForFile(file, openIssues, advisory.issueBodyDrafts ?? []), {
 			onNone: () => [],
 			onSome: (action) => [action],
 		}),

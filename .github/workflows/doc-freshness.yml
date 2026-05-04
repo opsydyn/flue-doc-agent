@@ -44,6 +44,7 @@ jobs:
           APP_ENV: production
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           DOC_FRESHNESS_SUMMARY_MODEL: gpt-4.1-nano
+          DOC_FRESHNESS_ADVISORY_MODEL: gpt-4.1-mini
           ONE_DOLLAR_STATS_API_KEY: ${{ secrets.ONE_DOLLAR_STATS_API_KEY }}
           ODS_SITE_ID: ${{ secrets.ODS_SITE_ID }}
           PUBLIC_ODS_SITE_ID: ${{ secrets.ODS_SITE_ID }}
@@ -185,6 +186,21 @@ jobs:
         working-directory: agents/doc-freshness
         run: bun scripts/emit-github-annotations.ts --input /tmp/freshness-result.json
 
+      - name: Generate AI advisory review
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DOC_FRESHNESS_ADVISORY_MODEL: gpt-4.1-mini
+        run: |
+          bun agents/doc-freshness/scripts/generate-ai-advisory.ts \
+            --freshness /tmp/freshness-result.json \
+            --repoRoot "$GITHUB_WORKSPACE" \
+            --output /tmp/freshness-advisory.json
+          jq -r '
+            "## AI Advisory Artifacts\n\n" +
+            "### Patch Proposal\n\n" + (.patchProposal.markdownArtifact // "No patch proposal generated.") + "\n\n" +
+            "### Draft PR Recommendation\n\n" + (.draftPr.comment // "No draft PR recommendation generated.")
+          ' /tmp/freshness-advisory.json >> "$GITHUB_STEP_SUMMARY"
+
       - name: Generate Starlight freshness pages
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -193,6 +209,7 @@ jobs:
           bun agents/doc-freshness/scripts/write-starlight-reports.ts \
             --ods /tmp/ods-pageviews.json \
             --freshness /tmp/freshness-result.json \
+            --advisory /tmp/freshness-advisory.json \
             --out packages/docs/src/content/docs/analytics
 
       - name: Build docs with generated reports
@@ -226,7 +243,7 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
-        run: bun scripts/sync-github-freshness-issues.ts --input /tmp/freshness-result.json
+        run: bun scripts/sync-github-freshness-issues.ts --input /tmp/freshness-result.json --advisory /tmp/freshness-advisory.json
 
       - name: Apply freshness gate
         run: jq -e '.shouldFail | not' /tmp/freshness-result.json > /dev/null

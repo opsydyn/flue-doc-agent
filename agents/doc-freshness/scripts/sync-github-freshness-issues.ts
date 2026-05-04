@@ -2,16 +2,17 @@ import { readFile } from "node:fs/promises";
 import { Octokit } from "@octokit/rest";
 import { Effect, Match, Option, Record, Redacted, Schema } from "effect";
 import {
-	type GithubFreshnessIssueAction,
-	githubFreshnessIssueInputJsonSchema,
-	githubOpenIssueSchema,
-	planGithubFreshnessIssues,
-} from "../src/GithubFreshnessIssues";
-import {
 	GithubActionsConfig,
 	GithubActionsConfigLive,
 	githubRepositoryParts,
 } from "../src/config/GithubActionsConfig";
+import {
+	type GithubFreshnessIssueAction,
+	githubFreshnessIssueAdvisoryJsonSchema,
+	githubFreshnessIssueInputJsonSchema,
+	githubOpenIssueSchema,
+	planGithubFreshnessIssues,
+} from "../src/GithubFreshnessIssues";
 
 const args = process.argv.slice(2).reduce<Record.ReadonlyRecord<string, string>>(
 	(state, arg, index, all) =>
@@ -37,6 +38,7 @@ const requiredOption = (name: string, value: Option.Option<string>) =>
 	Option.getOrElse(value, () => failMissing(name));
 
 const inputPath = requiredOption("--input", Record.get(args, "input"));
+const advisoryPath = Record.get(args, "advisory");
 const config = await Effect.runPromise(
 	Effect.gen(function* () {
 		return yield* GithubActionsConfig;
@@ -49,6 +51,7 @@ const token = Redacted.value(config.githubToken);
 
 const octokit = new Octokit({ auth: token });
 const decodeFreshnessResult = Schema.decodeUnknownSync(githubFreshnessIssueInputJsonSchema);
+const decodeAdvisoryResult = Schema.decodeUnknownOption(githubFreshnessIssueAdvisoryJsonSchema);
 
 const issueFromOctokit = (issue: {
 	readonly number: number;
@@ -70,7 +73,16 @@ const openIssues = await octokit.paginate(octokit.rest.issues.listForRepo, {
 
 const content = await readFile(inputPath, "utf8");
 const freshness = decodeFreshnessResult(content);
-const actions = planGithubFreshnessIssues(freshness, openIssues.map(issueFromOctokit));
+const advisory = await Option.match(advisoryPath, {
+	onNone: () => Promise.resolve({}),
+	onSome: (filePath) =>
+		readFile(filePath, "utf8")
+			.then((advisoryContent) =>
+				Option.getOrElse(decodeAdvisoryResult(advisoryContent), () => ({})),
+			)
+			.catch(() => ({})),
+});
+const actions = planGithubFreshnessIssues(freshness, openIssues.map(issueFromOctokit), advisory);
 
 const createAction = (action: GithubFreshnessIssueAction) =>
 	action as Extract<GithubFreshnessIssueAction, { readonly _tag: "CreateGithubFreshnessIssue" }>;
