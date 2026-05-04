@@ -575,7 +575,7 @@ const prCommentProvenance = (draftPr: DraftPrRecommendation): ReadonlyArray<AiFe
 				totalTokens: 0,
 				itemCount: 1,
 				generatedAt: new Date().toISOString(),
-				note: "Draft PR comment artifact generated; no PR was opened automatically",
+				note: "Draft PR comment artifact generated for the Docs Librarian draft PR sync step",
 			}),
 		]),
 		Match.orElse(() => []),

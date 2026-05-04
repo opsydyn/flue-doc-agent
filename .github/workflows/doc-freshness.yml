@@ -22,6 +22,7 @@ jobs:
       actions: write
       contents: write
       issues: write
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@v4
@@ -244,6 +245,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: bun scripts/sync-github-freshness-issues.ts --input /tmp/freshness-result.json --advisory /tmp/freshness-advisory.json
+
+      - name: Sync Docs Librarian draft PR
+        working-directory: agents/doc-freshness
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bun scripts/sync-github-draft-pr.ts --advisory /tmp/freshness-advisory.json --base main
 
       - name: Apply freshness gate
         run: jq -e '.shouldFail | not' /tmp/freshness-result.json > /dev/null
