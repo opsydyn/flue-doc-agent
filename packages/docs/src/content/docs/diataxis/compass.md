@@ -40,8 +40,8 @@ The names matter less than the distinctions. The compass works at any scale — 
 
 | Content | Practical / Theoretical | Acquisition / Application | Type |
 | --- | --- | --- | --- |
-| ADR-006: UrlChecker ACL | Theoretical | Acquisition | Explanation |
-| `check-staleness` skill | Practical | Application | How-to guide |
-| Running the agent locally | Practical | Acquisition | Tutorial |
-| Payload schema | Theoretical | Application | Reference |
+| `diataxis/tutorials` first run | Practical | Acquisition | Tutorial |
+| `diataxis/how-to-guides` task recipes | Practical | Application | How-to guide |
+| `diataxis/reference` contract tables | Theoretical | Application | Reference |
+| `diataxis/explanation` architecture page | Theoretical | Acquisition | Explanation |
 | Balanced coupling analysis | Theoretical | Acquisition | Explanation |

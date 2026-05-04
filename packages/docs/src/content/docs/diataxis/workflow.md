@@ -36,6 +36,12 @@ These patterns usually indicate mixed types:
 
 ## In this project
 
-The doc-freshness agent can apply Diátaxis mechanically: it scans documentation for these mixed-type signals and flags them as staleness issues. A doc that has drifted from its intended type is a form of decay — it may still be accurate but it has become less useful.
+The tutorial, how-to, reference, and explanation pages in this section are now the worked example
+for using Flue and the `doc-freshness` agent without mixing user needs.
 
-The ADRs in this project were written as explanation from the start. As the project grows, how-to guides (running the agent, adding new agents) and reference (payload schema, service API) should be added without disturbing the explanation content already present.
+The `doc-freshness` agent can also apply Diátaxis mechanically: it scans documentation for mixed-type
+signals and flags them as a form of drift. A page can stay factually correct while becoming less
+useful because it has started trying to be two document types at once.
+
+The ADRs remain explanation. The quadrant pages here now carry the task-oriented and reference-heavy
+material that previously existed only as examples or implied future work.

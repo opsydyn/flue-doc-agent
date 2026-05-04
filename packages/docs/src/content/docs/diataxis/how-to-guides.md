@@ -1,46 +1,97 @@
 ---
-title: How-to guides
-description: Problem-oriented documentation that directs a competent user to a result.
+title: How to work with Flue and doc-freshness
+description: Common tasks for running the Flue dev server, scoping audits, switching modes, and fetching analytics.
 ---
 
-A how-to guide answers the question: **"How do I …?"** It is written for a reader who already has context and a specific goal. They do not need teaching — they need directions.
+Use this page when your environment already works and you need to get something done.
 
-## What a how-to guide is
+## How to start the local webhook server
 
-The reader is competent. They have a problem to solve right now. A how-to guide gives them the steps to reach their goal without detour.
+Start the Flue development server from the repository root:
 
-Unlike a tutorial, the guide does not need to hold the reader's hand or explain what each step means. It assumes they can judge whether a step is correct and adapt it to their situation.
+```bash
+./node_modules/.bin/varlock run --path ./.env.schema -- \
+  ./node_modules/.bin/flue dev --target node
+```
 
-## What a how-to guide is not
+Then call the webhook endpoint:
 
-- A tutorial — it does not teach; it directs
-- A reference page — it does not describe every option, only the path to the goal
-- An explanation — it does not discuss design reasoning
+```bash
+curl http://localhost:3583/agents/doc-freshness/session-local \
+  -H "Content-Type: application/json" \
+  -d '{"repoPath":"/absolute/path/to/doc-agent","glob":"packages/docs/src/content/docs/**/*.{md,mdx}","owner":"opsydyn","repo":"flue-doc-agent","ref":"main"}'
+```
 
-## Principles
+Use a new final path segment to start a fresh Flue conversation. Reuse the same final path segment
+to continue the same session.
 
-**Name the goal, not the tool.** The title should express the reader's objective: "Add a new agent" not "Using the `flue init` command."
+## How to audit only part of the docs tree
 
-**Start and finish at sensible boundaries.** The guide does not need to cover the whole system — just the slice that solves the problem. Assume the reader can handle context before and after.
+Pass a narrower `glob` in the payload.
 
-**Stay focused.** No digressions. If an explanation is tempting, link to it instead.
+Examples:
 
-**Acknowledge real-world variation.** Unlike a tutorial, a how-to guide can acknowledge that the reader's situation may differ slightly and offer lightweight branching guidance.
+### Decisions only
 
-**Sequence for the reader's workflow.** Order steps the way a person actually thinks and works, not the way the system is internally structured.
+```json
+{"glob":"packages/docs/src/content/docs/decisions/**/*.md"}
+```
 
-## Writing checklist
+### Postmortems only
 
-- [ ] Does the title start with "How to …" or a verb phrase?
-- [ ] Does it assume the reader is already competent?
-- [ ] Is every step oriented toward the goal, not toward explaining the system?
-- [ ] Have you avoided teaching things the reader already knows?
-- [ ] Can someone follow it without reading anything else first?
+```json
+{"glob":"packages/docs/src/content/docs/postmortems/**/*.md"}
+```
 
-## In this project
+### One subtree under `diataxis`
 
-How-to guides for doc-agent might include:
-- How to add a new agent to the monorepo
-- How to write a custom tool for a Flue agent
-- How to run the doc-freshness agent in GitHub Actions
-- How to configure the staleness threshold
+```json
+{"glob":"packages/docs/src/content/docs/diataxis/**/*.{md,mdx}"}
+```
+
+Use an absolute glob when your caller already has one. The handler accepts both repo-relative and
+absolute patterns.
+
+## How to force the agentic Flue skill path
+
+The default mode is deterministic `check-staleness`. To run the embedded Flue skill instead, set
+`mode` to `agent` or `agent-check-staleness`.
+
+```json
+{
+  "mode": "agent",
+  "repoPath": "/absolute/path/to/doc-agent",
+  "glob": "packages/docs/src/content/docs/**/*.{md,mdx}",
+  "owner": "opsydyn",
+  "repo": "flue-doc-agent",
+  "ref": "main"
+}
+```
+
+Both `agent` and `agent-check-staleness` select the same agentic execution path.
+
+## How to fetch the analytics report only
+
+Run the analytics mode when you only want the One Dollar Stats summary:
+
+```bash
+./node_modules/.bin/varlock run --path ./.env.schema -- \
+  ./node_modules/.bin/flue run doc-freshness --target node --id analytics-1 \
+  --payload '{"mode":"analytics"}'
+```
+
+The result contains `report`, `pageCount`, and `totalViews`.
+
+## How to match the GitHub Actions invocation shape locally
+
+When you want your local run to resemble CI, pass the repository metadata explicitly and keep the
+glob rooted at the docs collection:
+
+```bash
+./node_modules/.bin/varlock run --path ./.env.schema -- \
+  ./node_modules/.bin/flue run doc-freshness --target node --id ci-shape-1 \
+  --payload '{"repoPath":"/absolute/path/to/doc-agent","glob":"packages/docs/src/content/docs/**/*.{md,mdx}","owner":"opsydyn","repo":"flue-doc-agent","ref":"main"}'
+```
+
+If you also have analytics signals available, provide them in `signals.pageviews`,
+`signals.repoTraffic`, and `signals.pageviewThreshold`.
