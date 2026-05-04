@@ -10,13 +10,25 @@ Recommended PR title: Draft docs freshness proposal: packages/docs/src/content/d
 
 ## Why this PR exists
 
-The document contains multiple dead links and outdated code references, which affect usability and accuracy. Automated fixes are risky without human verification to ensure correct updates and maintain content integrity.
+Multiple dead links including external API and local URLs reduce documentation reliability and user experience. Medium priority and warning status indicate moderate impact. This proposal suggests updating or removing dead links to improve usability without modifying core content.
 
 ## Suggested PR body
 
-The document contains multiple dead links and outdated code references, which affect usability and accuracy. Automated fixes are risky without human verification to ensure correct updates and maintain content integrity.
+This draft PR should be opened only after a maintainer applies and validates the proposed documentation changes.
 
-This draft PR contains the Docs Librarian patch proposal artifact for human review before any source documentation changes are applied.
+# Documentation Freshness - Link Update Proposal
+
+This document contains several dead links that reduce user experience and reliability. To improve this:
+
+- Review and update or remove all dead links, especially external API and localhost URLs.
+- Verify external API availability and replace inaccessible URLs.
+- Add a note recommending regular link audits to maintain freshness.
+
+**Note:** This proposal does not modify core content but focuses on link integrity.
+
+---
+
+*Requires human review before applying changes.*
 
 ## Suggested Docs Librarian comment
 
@@ -32,27 +44,30 @@ Human review required: `yes`
 
 ### Rationale
 
-The document contains multiple dead links and outdated code references, which affect usability and accuracy. Automated fixes are risky without human verification to ensure correct updates and maintain content integrity.
+Multiple dead links including external API and local URLs reduce documentation reliability and user experience. Medium priority and warning status indicate moderate impact. This proposal suggests updating or removing dead links to improve usability without modifying core content.
 
 ### Proposed changes
 
-- Add a note at the top of the document indicating the presence of dead links and the need for review.
-- Suggest reviewing and updating or removing dead links to restore document reliability.
-- Recommend verifying code references to ensure alignment with latest code changes.
+- Review all links in the document for validity.
+- Remove or update dead links, especially those pointing to external APIs or localhost URLs.
+- Verify external API availability and replace inaccessible URLs with accessible alternatives if needed.
+- Add a note recommending periodic link verification to maintain documentation freshness.
 
 ### Patch proposal artifact
 
-### Patch proposal for `packages/docs/src/content/docs/analytics/freshness.md`
+# Documentation Freshness - Link Update Proposal
 
-**Why this document:** The Docs Librarian selected this generated freshness report because it contains multiple dead links and outdated code references.
+This document contains several dead links that reduce user experience and reliability. To improve this:
 
-**Proposed changes:**
+- Review and update or remove all dead links, especially external API and localhost URLs.
+- Verify external API availability and replace inaccessible URLs.
+- Add a note recommending regular link audits to maintain freshness.
 
-- Add a note at the top of the document indicating the presence of dead links and the need for review.
-- Review and update or remove dead links to restore document reliability.
-- Verify code references to ensure alignment with latest code changes.
+**Note:** This proposal does not modify core content but focuses on link integrity.
 
-**Human review required:** yes. This artifact does not modify source docs automatically.
+---
+
+*Requires human review before applying changes.*
 
 ## Maintainer checklist
 
