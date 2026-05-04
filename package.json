@@ -2,7 +2,10 @@
 	"name": "doc-agent",
 	"private": true,
 	"type": "module",
-	"workspaces": ["agents/*", "packages/*"],
+	"workspaces": [
+		"agents/*",
+		"packages/*"
+	],
 	"scripts": {
 		"check": "biome check --write .",
 		"env:check": "varlock load --show-all",
@@ -12,9 +15,6 @@
 		"fix:md": "markdownlint-cli2 --fix",
 		"knip": "knip",
 		"typecheck": "tsgo --noEmit"
-	},
-	"dependencies": {
-		"effect": "beta"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.4.14",

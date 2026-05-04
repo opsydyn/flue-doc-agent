@@ -1,22 +1,22 @@
 import { Data, Match, Option, Record, Schema } from "effect";
 
-export const githubHistoryFoundSchema = Schema.Struct({
+const githubHistoryFoundSchema = Schema.Struct({
 	_tag: Schema.Literal("CommitFound"),
 	path: Schema.String,
 	sha: Schema.String,
 	committedAt: Schema.String,
 	url: Schema.String,
 });
-export const githubHistoryNoneSchema = Schema.Struct({
+const githubHistoryNoneSchema = Schema.Struct({
 	_tag: Schema.Literal("NoCommitFound"),
 	path: Schema.String,
 });
-export const githubHistoryUnavailableSchema = Schema.Struct({
+const githubHistoryUnavailableSchema = Schema.Struct({
 	_tag: Schema.Literal("HistoryUnavailable"),
 	path: Schema.String,
 	reason: Schema.String,
 });
-export const githubHistoryEntrySchema = Schema.Union([
+const githubHistoryEntrySchema = Schema.Union([
 	githubHistoryFoundSchema,
 	githubHistoryNoneSchema,
 	githubHistoryUnavailableSchema,
@@ -47,7 +47,7 @@ export type GitHubHistoryClient = {
 	}) => Promise<{ readonly data: ReadonlyArray<GitHubHistoryCommit> }>;
 };
 
-export type GitHubHistoryRequest = {
+type GitHubHistoryRequest = {
 	readonly owner: string;
 	readonly repo: string;
 	readonly ref: string;

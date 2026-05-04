@@ -24,7 +24,7 @@ export const freshnessReviewedFileSchema = Schema.Struct({
 	issues: Schema.Array(Schema.String),
 });
 
-export const freshnessSummarySchema = Schema.Struct({
+const freshnessSummarySchema = Schema.Struct({
 	total: Schema.Number.check(Schema.isInt(), Schema.isGreaterThanOrEqualTo(0)),
 	fresh: Schema.Number.check(Schema.isInt(), Schema.isGreaterThanOrEqualTo(0)),
 	stale: Schema.Number.check(Schema.isInt(), Schema.isGreaterThanOrEqualTo(0)),
@@ -32,7 +32,7 @@ export const freshnessSummarySchema = Schema.Struct({
 	critical: Schema.Number.check(Schema.isInt(), Schema.isGreaterThanOrEqualTo(0)),
 });
 
-export const freshnessReviewSchema = Schema.Struct({
+const freshnessReviewSchema = Schema.Struct({
 	files: Schema.Array(freshnessReviewedFileSchema),
 	summary: freshnessSummarySchema,
 	shouldFail: Schema.Boolean,
@@ -40,11 +40,11 @@ export const freshnessReviewSchema = Schema.Struct({
 
 export const freshnessReviewJsonSchema = Schema.fromJsonString(freshnessReviewSchema);
 
-export type FreshnessReviewInput = typeof freshnessReviewInputSchema.Type;
+type FreshnessReviewInput = typeof freshnessReviewInputSchema.Type;
 export type FreshnessReviewInputFile = typeof freshnessReviewInputFileSchema.Type;
 export type FreshnessReviewedFile = typeof freshnessReviewedFileSchema.Type;
 export type FreshnessSummary = typeof freshnessSummarySchema.Type;
-export type FreshnessReview = typeof freshnessReviewSchema.Type;
+type FreshnessReview = typeof freshnessReviewSchema.Type;
 
 const issueList = (file: FreshnessReviewInputFile) =>
 	EffectArray.appendAll(file.staleReasons, file.warningReasons);

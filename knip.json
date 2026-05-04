@@ -1,0 +1,31 @@
+{
+	"$schema": "./node_modules/knip/schema.json",
+	"astro": {
+		"config": ["packages/docs/astro.config.mjs"]
+	},
+	"bun": true,
+	"github-actions": {
+		"config": [".github/workflows/*.yml"]
+	},
+	"ignoreBinaries": [
+		"scripts/extract-flue-json.ts",
+		"scripts/emit-github-annotations.ts",
+		"scripts/sync-github-freshness-issues.ts",
+		"scripts/sync-github-draft-pr.ts"
+	],
+	"ignoreDependencies": ["@flue/cli"],
+	"workspaces": {
+		"agents/doc-freshness": {
+			"entry": [
+				".flue/agents/*.ts",
+				"scripts/*.ts",
+				"src/__tests__/*.test.ts",
+				"src/__tests__/*.property.ts"
+			],
+			"project": [".flue/**/*.ts", "scripts/**/*.ts", "src/**/*.ts"]
+		},
+		"packages/docs": {
+			"ignoreDependencies": ["@fontsource/bangers", "@fontsource/ibm-plex-mono"]
+		}
+	}
+}

@@ -1,10 +1,10 @@
-import matter from "gray-matter";
 import { Array as EffectArray, Match, Record, Schema } from "effect";
+import matter from "gray-matter";
 
 type FrontmatterData = { readonly [key: string]: unknown };
 type StringMap = { readonly [key: string]: string };
 
-export const readDocParsedSchema = Schema.Struct({
+const readDocParsedSchema = Schema.Struct({
 	_tag: Schema.Literal("DocRead"),
 	path: Schema.String,
 	frontmatter: Schema.Record(Schema.String, Schema.String),
@@ -13,7 +13,7 @@ export const readDocParsedSchema = Schema.Struct({
 	externalLinks: Schema.Array(Schema.String),
 	codeReferences: Schema.Array(Schema.String),
 });
-export const readDocUnavailableSchema = Schema.Struct({
+const readDocUnavailableSchema = Schema.Struct({
 	_tag: Schema.Literal("DocUnavailable"),
 	path: Schema.String,
 	reason: Schema.String,

@@ -33,11 +33,9 @@ const make = Effect.gen(function* () {
 	return { check } as const;
 });
 
-export type UrlCheckerShape = Effect.Success<typeof make>;
+type UrlCheckerShape = Effect.Success<typeof make>;
 
-export class UrlChecker extends Context.Service<UrlChecker, UrlCheckerShape>()(
-	"UrlChecker",
-) {}
+export class UrlChecker extends Context.Service<UrlChecker, UrlCheckerShape>()("UrlChecker") {}
 
 // Pure layer — depends on HttpClient.HttpClient. Provide your own HttpClient to test.
 export const UrlCheckerLayer = Layer.effect(UrlChecker, make);

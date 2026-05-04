@@ -5,15 +5,15 @@ const nonNegativeIntegerSchema = Schema.Number.check(
 	Schema.isGreaterThanOrEqualTo(0),
 );
 
-export const semanticImpactSchema = Schema.Literals(["none", "low", "medium", "high"]);
-export const advisoryConfidenceSchema = Schema.Literals(["low", "medium", "high"]);
-export const staleClassificationSchema = Schema.Literals([
+const semanticImpactSchema = Schema.Literals(["none", "low", "medium", "high"]);
+const advisoryConfidenceSchema = Schema.Literals(["low", "medium", "high"]);
+const staleClassificationSchema = Schema.Literals([
 	"real-stale",
 	"needs-review",
 	"probably-harmless",
 ]);
-export const deterministicPrioritySchema = Schema.Literals(["critical", "medium", "low"]);
-export const aiFeatureSchema = Schema.Literals([
+const deterministicPrioritySchema = Schema.Literals(["critical", "medium", "low"]);
+const aiFeatureSchema = Schema.Literals([
 	"executive-summary",
 	"docs-librarian-pick",
 	"semantic-impact",
@@ -22,9 +22,9 @@ export const aiFeatureSchema = Schema.Literals([
 	"patch-proposal",
 	"pr-comment",
 ]);
-export const aiProvenanceSourceSchema = Schema.Literals(["openai", "fallback"]);
-export const aiProviderSchema = Schema.Literals(["openai", "none"]);
-export const advisoryRiskSeveritySchema = Schema.Literals(["critical", "high", "medium", "low"]);
+const aiProvenanceSourceSchema = Schema.Literals(["openai", "fallback"]);
+const aiProviderSchema = Schema.Literals(["openai", "none"]);
+const advisoryRiskSeveritySchema = Schema.Literals(["critical", "high", "medium", "low"]);
 
 export const semanticImpactReviewSchema = Schema.Struct({
 	path: Schema.String,
@@ -49,13 +49,13 @@ export const aiFeatureProvenanceSchema = Schema.Struct({
 	note: Schema.optional(Schema.String),
 });
 
-export const advisoryRiskSchema = Schema.Struct({
+const advisoryRiskSchema = Schema.Struct({
 	path: Schema.String,
 	severity: advisoryRiskSeveritySchema,
 	reason: Schema.String,
 });
 
-export const advisoryActionSchema = Schema.Struct({
+const advisoryActionSchema = Schema.Struct({
 	path: Schema.String,
 	priority: deterministicPrioritySchema,
 	action: Schema.String,
@@ -76,7 +76,7 @@ export const docsLibrarianPickSchema = Schema.Struct({
 	note: Schema.String,
 });
 
-export const patchProposalStatusSchema = Schema.Literals(["generated", "skipped"]);
+const patchProposalStatusSchema = Schema.Literals(["generated", "skipped"]);
 export const patchProposalSchema = Schema.Struct({
 	path: Schema.String,
 	status: patchProposalStatusSchema,
@@ -90,7 +90,7 @@ export const patchProposalBatchSchema = Schema.Struct({
 	proposals: Schema.Array(patchProposalSchema),
 });
 
-export const draftPrStatusSchema = Schema.Literals(["ready", "not-ready"]);
+const draftPrStatusSchema = Schema.Literals(["ready", "not-ready"]);
 export const draftPrRecommendationSchema = Schema.Struct({
 	status: draftPrStatusSchema,
 	branchName: Schema.String,
@@ -100,7 +100,7 @@ export const draftPrRecommendationSchema = Schema.Struct({
 	reason: Schema.String,
 });
 
-export const relationshipTypeSchema = Schema.Literals(["explicit", "implicit-ai-suggested"]);
+const relationshipTypeSchema = Schema.Literals(["explicit", "implicit-ai-suggested"]);
 export const implicitDocCodeRelationshipSchema = Schema.Struct({
 	docPath: Schema.String,
 	codePath: Schema.String,
@@ -131,7 +131,7 @@ export const semanticImpactReviewBatchSchema = Schema.Struct({
 	reviews: Schema.Array(semanticImpactReviewSchema),
 });
 
-export const advisoryRankingSchema = Schema.Struct({
+const advisoryRankingSchema = Schema.Struct({
 	path: Schema.String,
 	deterministicPriority: deterministicPrioritySchema,
 	pageViews30d: nonNegativeIntegerSchema,
@@ -157,25 +157,22 @@ export const aiAdvisoryReportSchema = Schema.Struct({
 	provenance: Schema.Array(aiFeatureProvenanceSchema),
 });
 
-export type SemanticImpact = typeof semanticImpactSchema.Type;
-export type AdvisoryConfidence = typeof advisoryConfidenceSchema.Type;
-export type StaleClassification = typeof staleClassificationSchema.Type;
-export type DeterministicPriority = typeof deterministicPrioritySchema.Type;
-export type AiFeature = typeof aiFeatureSchema.Type;
+type SemanticImpact = typeof semanticImpactSchema.Type;
+type AdvisoryConfidence = typeof advisoryConfidenceSchema.Type;
+type StaleClassification = typeof staleClassificationSchema.Type;
+type DeterministicPriority = typeof deterministicPrioritySchema.Type;
 export type AiFeatureProvenance = typeof aiFeatureProvenanceSchema.Type;
-export type SemanticImpactReview = typeof semanticImpactReviewSchema.Type;
-export type SemanticImpactReviewBatch = typeof semanticImpactReviewBatchSchema.Type;
+type SemanticImpactReview = typeof semanticImpactReviewSchema.Type;
 export type AdvisoryRisk = typeof advisoryRiskSchema.Type;
 export type AdvisoryAction = typeof advisoryActionSchema.Type;
 export type IssueBodyDraft = typeof issueBodyDraftSchema.Type;
 export type DocsLibrarianPick = typeof docsLibrarianPickSchema.Type;
 export type PatchProposal = typeof patchProposalSchema.Type;
-export type PatchProposalBatch = typeof patchProposalBatchSchema.Type;
 export type DraftPrRecommendation = typeof draftPrRecommendationSchema.Type;
 export type ImplicitDocCodeRelationship = typeof implicitDocCodeRelationshipSchema.Type;
 export type AdvisoryFreshnessCandidate = typeof advisoryFreshnessCandidateSchema.Type;
-export type AdvisoryRankingInput = typeof advisoryRankingInputSchema.Type;
-export type AdvisoryRanking = typeof advisoryRankingSchema.Type;
+type AdvisoryRankingInput = typeof advisoryRankingInputSchema.Type;
+type AdvisoryRanking = typeof advisoryRankingSchema.Type;
 export type AiAdvisoryReport = typeof aiAdvisoryReportSchema.Type;
 
 const docsLibrarianModel = () => "deterministic-docs-librarian";
@@ -370,7 +367,7 @@ export const topAdvisoryActions = (
 	reviews: ReadonlyArray<SemanticImpactReview>,
 ): ReadonlyArray<AdvisoryAction> => rankings.slice(0, 3).map(actionForRanking(reviews));
 
-export const advisoryIssueMarker = (path: string) => `<!-- doc-freshness:${path} -->`;
+const advisoryIssueMarker = (path: string) => `<!-- doc-freshness:${path} -->`;
 
 const issueDraftTitle = (path: string) => `Critical doc freshness: ${path}`;
 
@@ -427,7 +424,7 @@ const issueBodyDraftForCandidate = (
 		].join("\n"),
 	});
 
-export const issueBodyDraftsForCandidates = (
+const issueBodyDraftsForCandidates = (
 	candidates: ReadonlyArray<AdvisoryFreshnessCandidate>,
 	reviews: ReadonlyArray<SemanticImpactReview>,
 ): ReadonlyArray<IssueBodyDraft> =>
@@ -556,7 +553,7 @@ const notReadyDraftPr = (proposal: PatchProposal): DraftPrRecommendation =>
 		reason: proposal.rationale,
 	});
 
-export const draftPrRecommendationForPatch = (proposal: PatchProposal) =>
+const draftPrRecommendationForPatch = (proposal: PatchProposal) =>
 	Match.value(proposal.status).pipe(
 		Match.when("generated", () => readyDraftPr(proposal)),
 		Match.orElse(() => notReadyDraftPr(proposal)),

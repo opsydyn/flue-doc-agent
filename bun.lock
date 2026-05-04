@@ -4,9 +4,6 @@
   "workspaces": {
     "": {
       "name": "doc-agent",
-      "dependencies": {
-        "effect": "beta",
-      },
       "devDependencies": {
         "@biomejs/biome": "2.4.14",
         "@catenarycloud/linteffect": "0.0.4-1",

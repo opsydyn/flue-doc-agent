@@ -2,7 +2,7 @@ import { Match, Option, Schema } from "effect";
 import { type IssueBodyDraft, issueBodyDraftSchema } from "./AiAdvisory";
 import { freshnessReviewedFileSchema } from "./FreshnessReview";
 
-export const githubFreshnessIssueInputSchema = Schema.Struct({
+const githubFreshnessIssueInputSchema = Schema.Struct({
 	files: Schema.Array(freshnessReviewedFileSchema),
 });
 
@@ -16,7 +16,7 @@ export const githubOpenIssueSchema = Schema.Struct({
 	body: Schema.optional(Schema.String),
 });
 
-export const githubFreshnessIssueAdvisorySchema = Schema.Struct({
+const githubFreshnessIssueAdvisorySchema = Schema.Struct({
 	issueBodyDrafts: Schema.optional(Schema.Array(issueBodyDraftSchema)),
 });
 
@@ -24,22 +24,22 @@ export const githubFreshnessIssueAdvisoryJsonSchema = Schema.fromJsonString(
 	githubFreshnessIssueAdvisorySchema,
 );
 
-export const githubCreateFreshnessIssueSchema = Schema.Struct({
+const githubCreateFreshnessIssueSchema = Schema.Struct({
 	_tag: Schema.Literal("CreateGithubFreshnessIssue"),
 	title: Schema.String,
 	body: Schema.String,
 });
 
-export const githubUpdateFreshnessIssueSchema = Schema.Struct({
+const githubUpdateFreshnessIssueSchema = Schema.Struct({
 	_tag: Schema.Literal("UpdateGithubFreshnessIssue"),
 	number: Schema.Number.check(Schema.isInt(), Schema.isGreaterThan(0)),
 	title: Schema.String,
 	body: Schema.String,
 });
 
-export type GithubFreshnessIssueInput = typeof githubFreshnessIssueInputSchema.Type;
-export type GithubFreshnessIssueAdvisory = typeof githubFreshnessIssueAdvisorySchema.Type;
-export type GithubOpenIssue = typeof githubOpenIssueSchema.Type;
+type GithubFreshnessIssueInput = typeof githubFreshnessIssueInputSchema.Type;
+type GithubFreshnessIssueAdvisory = typeof githubFreshnessIssueAdvisorySchema.Type;
+type GithubOpenIssue = typeof githubOpenIssueSchema.Type;
 export type GithubFreshnessIssueAction =
 	| typeof githubCreateFreshnessIssueSchema.Type
 	| typeof githubUpdateFreshnessIssueSchema.Type;

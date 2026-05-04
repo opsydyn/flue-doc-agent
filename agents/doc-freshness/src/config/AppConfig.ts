@@ -1,6 +1,6 @@
 import { Config, Context, Effect, Layer, Option, Redacted, Schema } from "effect";
 
-export type AppEnv = "development" | "preview" | "production" | "test";
+type AppEnv = "development" | "preview" | "production" | "test";
 
 export interface AppConfigShape {
 	readonly appEnv: AppEnv;

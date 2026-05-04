@@ -31,7 +31,7 @@ export type DeterministicFreshnessSignals = {
 	readonly pageviewThreshold: number;
 };
 
-export type DeterministicFreshnessInput = {
+type DeterministicFreshnessInput = {
 	readonly repoPath: string;
 	readonly glob: string;
 	readonly owner: string;
@@ -41,7 +41,7 @@ export type DeterministicFreshnessInput = {
 	readonly signals: Option.Option<DeterministicFreshnessSignals>;
 };
 
-export type DeterministicFreshnessResult = {
+type DeterministicFreshnessResult = {
 	readonly files: ReadonlyArray<FreshnessReviewedFile>;
 	readonly summary: FreshnessSummary;
 	readonly report: string;
@@ -159,7 +159,7 @@ const listMarkdownFiles = async (
 		.then((groups) => groups.flat())
 		.catch(() => []);
 
-export const listMarkdownDocs = Effect.fn("DocFreshness.listMarkdownDocs")(function* (
+const listMarkdownDocs = Effect.fn("DocFreshness.listMarkdownDocs")(function* (
 	repoPath: string,
 	glob: string,
 ) {

@@ -1,6 +1,6 @@
 import { Config, Context, Effect, Layer, type Redacted } from "effect";
 
-export interface GithubActionsConfigShape {
+interface GithubActionsConfigShape {
 	readonly githubRepository: string;
 	readonly githubToken: Redacted.Redacted<string>;
 }

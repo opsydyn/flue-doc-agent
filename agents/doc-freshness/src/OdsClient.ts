@@ -7,7 +7,7 @@ import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
 // Errors
 // -----------------------------------------------------------------------------
 
-export class OdsClientError extends Data.TaggedError("OdsClientError")<{
+class OdsClientError extends Data.TaggedError("OdsClientError")<{
 	readonly cause: unknown;
 }> {}
 
@@ -41,12 +41,12 @@ const make = Effect.gen(function* () {
 	return { fetchPageviews } as const;
 });
 
-export type OdsClientShape = Effect.Success<typeof make>;
+type OdsClientShape = Effect.Success<typeof make>;
 
 export class OdsClient extends Context.Service<OdsClient, OdsClientShape>()("OdsClient") {}
 
 // Pure layer — depends on HttpClient.HttpClient. Provide your own HttpClient to test.
-export const OdsClientLayer = Layer.effect(OdsClient, make);
+const OdsClientLayer = Layer.effect(OdsClient, make);
 
 // Production layer — wires in the global fetch-based HttpClient.
 export const OdsClientDefault = OdsClientLayer.pipe(Layer.provide(FetchHttpClient.layer));

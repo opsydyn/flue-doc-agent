@@ -1,7 +1,7 @@
 import { Match, Option, Schema } from "effect";
 import { freshnessReviewedFileSchema } from "./FreshnessReview";
 
-export const githubActionsAnnotationInputSchema = Schema.Struct({
+const githubActionsAnnotationInputSchema = Schema.Struct({
 	files: Schema.Array(freshnessReviewedFileSchema),
 });
 
@@ -9,22 +9,22 @@ export const githubActionsAnnotationInputJsonSchema = Schema.fromJsonString(
 	githubActionsAnnotationInputSchema,
 );
 
-export const githubActionsErrorAnnotationSchema = Schema.Struct({
+const githubActionsErrorAnnotationSchema = Schema.Struct({
 	_tag: Schema.Literal("GithubActionsErrorAnnotation"),
 	file: Schema.String,
 	title: Schema.String,
 	message: Schema.String,
 });
 
-export const githubActionsWarningAnnotationSchema = Schema.Struct({
+const githubActionsWarningAnnotationSchema = Schema.Struct({
 	_tag: Schema.Literal("GithubActionsWarningAnnotation"),
 	file: Schema.String,
 	title: Schema.String,
 	message: Schema.String,
 });
 
-export type GithubActionsAnnotationInput = typeof githubActionsAnnotationInputSchema.Type;
-export type GithubActionsAnnotation =
+type GithubActionsAnnotationInput = typeof githubActionsAnnotationInputSchema.Type;
+type GithubActionsAnnotation =
 	| typeof githubActionsErrorAnnotationSchema.Type
 	| typeof githubActionsWarningAnnotationSchema.Type;
 

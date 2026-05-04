@@ -6,7 +6,7 @@ import {
 	patchProposalSchema,
 } from "./AiAdvisory";
 
-export const githubDraftPrSyncAdvisorySchema = Schema.Struct({
+const githubDraftPrSyncAdvisorySchema = Schema.Struct({
 	draftPr: Schema.optional(draftPrRecommendationSchema),
 	patchProposal: Schema.optional(patchProposalSchema),
 });
@@ -22,7 +22,7 @@ export const githubOpenPullRequestSchema = Schema.Struct({
 	headRef: Schema.String,
 });
 
-export const githubCreateDraftPrSchema = Schema.Struct({
+const githubCreateDraftPrSchema = Schema.Struct({
 	_tag: Schema.Literal("CreateGithubDraftPr"),
 	branchName: Schema.String,
 	title: Schema.String,
@@ -32,7 +32,7 @@ export const githubCreateDraftPrSchema = Schema.Struct({
 	proposalContent: Schema.String,
 });
 
-export const githubUpdateDraftPrSchema = Schema.Struct({
+const githubUpdateDraftPrSchema = Schema.Struct({
 	_tag: Schema.Literal("UpdateGithubDraftPr"),
 	number: Schema.Number.check(Schema.isInt(), Schema.isGreaterThan(0)),
 	branchName: Schema.String,
@@ -42,8 +42,8 @@ export const githubUpdateDraftPrSchema = Schema.Struct({
 	proposalContent: Schema.String,
 });
 
-export type GithubDraftPrSyncAdvisory = typeof githubDraftPrSyncAdvisorySchema.Type;
-export type GithubOpenPullRequest = typeof githubOpenPullRequestSchema.Type;
+type GithubDraftPrSyncAdvisory = typeof githubDraftPrSyncAdvisorySchema.Type;
+type GithubOpenPullRequest = typeof githubOpenPullRequestSchema.Type;
 export type GithubDraftPrAction =
 	| typeof githubCreateDraftPrSchema.Type
 	| typeof githubUpdateDraftPrSchema.Type;
