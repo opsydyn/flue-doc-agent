@@ -5,12 +5,12 @@ description: Generated from One Dollar Stats analytics by the doc-freshness work
 
 # One Dollar Stats 30d Page Views
 
-_Generated: Monday 18 May 2026 at 10:36 UTC._
+_Generated: Monday 25 May 2026 at 10:40 UTC._
 
 | Page | Views |
 | --- | ---: |
 | /flue-doc-agent/analytics/freshness | 22 |
-| /flue-doc-agent | 19 |
+| /flue-doc-agent | 20 |
 | /flue-doc-agent/decisions/adr-001-bun-monorepo | 13 |
 | /flue-doc-agent/analysis/balanced-coupling | 8 |
 | /flue-doc-agent/diataxis/how-to-guides | 7 |
@@ -37,4 +37,4 @@ _Generated: Monday 18 May 2026 at 10:36 UTC._
 | /flue-doc-agent/decisions/adr-019-varlock-effect-app-config | 1 |
 | /flue-doc-agent/postmortems/fastcheck-url-checker | 1 |
 
-**Total: 115 views across 27 pages**
+**Total: 116 views across 27 pages**
