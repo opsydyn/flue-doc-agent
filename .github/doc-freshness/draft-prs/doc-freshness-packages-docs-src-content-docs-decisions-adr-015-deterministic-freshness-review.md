@@ -10,26 +10,19 @@ Recommended PR title: Draft docs freshness proposal: packages/docs/src/content/d
 
 ## Why this PR exists
 
-The ADR-015 document is marked as real-stale with high semantic impact and multiple code updates not reflected in the documentation. The Docs Librarian recommends updating the documentation to reflect latest code changes. This proposal adds a note to prompt human reviewers to verify and update the document accordingly, without making direct content changes, ensuring safety and correctness.
+The ADR-015 document is marked as real-stale with high semantic impact due to multiple code updates after the last doc commit. The documentation impacts understanding of key functionality and should be thoroughly updated to match the latest codebase changes. This proposal adds a non-mutating advisory note to prompt maintainers to review and update the document accordingly.
 
 ## Suggested PR body
 
 This draft PR should be opened only after a maintainer applies and validates the proposed documentation changes.
 
-## Requires Human Review: ADR-015 Deterministic Freshness Review Tool
+## Advisory Note
 
-This document has been identified as outdated due to multiple code updates after its last revision. It is recommended to review and update the documentation to accurately reflect the latest code changes.
-
-**Action:**
-- Verify the current implementation against this ADR.
-- Update the document to reflect any changes in the deterministic freshness review tool.
-- Ensure that the scoring, priority, and failure gate logic described matches the current codebase.
-
-This note is to assist maintainers in prioritizing documentation updates and does not modify the existing content directly.
+**Important:** This document is currently outdated relative to the latest codebase changes. Multiple core freshness review tool files have been updated since the last documentation commit. To ensure accurate understanding and effective use, please thoroughly review and update this ADR to align with the current implementation.
 
 ---
 
-*This proposal requires human review before any changes are applied.*
+*This is a non-mutating advisory patch proposal. No source files were edited. Human review is required to plan and apply necessary documentation updates.*
 
 ## Suggested Docs Librarian comment
 
@@ -45,28 +38,21 @@ Human review required: `yes`
 
 ### Rationale
 
-The ADR-015 document is marked as real-stale with high semantic impact and multiple code updates not reflected in the documentation. The Docs Librarian recommends updating the documentation to reflect latest code changes. This proposal adds a note to prompt human reviewers to verify and update the document accordingly, without making direct content changes, ensuring safety and correctness.
+The ADR-015 document is marked as real-stale with high semantic impact due to multiple code updates after the last doc commit. The documentation impacts understanding of key functionality and should be thoroughly updated to match the latest codebase changes. This proposal adds a non-mutating advisory note to prompt maintainers to review and update the document accordingly.
 
 ### Proposed changes
 
-- Add a 'Requires Human Review' note at the end of the document to prompt maintainers to update the documentation to reflect latest code changes.
+- Add an advisory note at the end of the document indicating that the documentation is outdated and requires thorough updating to reflect recent code changes.
 
 ### Patch proposal artifact
 
-## Requires Human Review: ADR-015 Deterministic Freshness Review Tool
+## Advisory Note
 
-This document has been identified as outdated due to multiple code updates after its last revision. It is recommended to review and update the documentation to accurately reflect the latest code changes.
-
-**Action:**
-- Verify the current implementation against this ADR.
-- Update the document to reflect any changes in the deterministic freshness review tool.
-- Ensure that the scoring, priority, and failure gate logic described matches the current codebase.
-
-This note is to assist maintainers in prioritizing documentation updates and does not modify the existing content directly.
+**Important:** This document is currently outdated relative to the latest codebase changes. Multiple core freshness review tool files have been updated since the last documentation commit. To ensure accurate understanding and effective use, please thoroughly review and update this ADR to align with the current implementation.
 
 ---
 
-*This proposal requires human review before any changes are applied.*
+*This is a non-mutating advisory patch proposal. No source files were edited. Human review is required to plan and apply necessary documentation updates.*
 
 ## Maintainer checklist
 
