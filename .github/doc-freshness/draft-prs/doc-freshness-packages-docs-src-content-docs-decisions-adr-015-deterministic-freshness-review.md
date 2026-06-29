@@ -10,19 +10,21 @@ Recommended PR title: Draft docs freshness proposal: packages/docs/src/content/d
 
 ## Why this PR exists
 
-The ADR-015 document is marked as real-stale with high semantic impact due to multiple code updates after the last doc commit. The documentation impacts understanding of key functionality and should be thoroughly updated to match the latest codebase changes. This proposal adds a non-mutating advisory note to prompt maintainers to review and update the document accordingly.
+The ADR-015 document is marked as real-stale with high semantic impact and high confidence. The Docs Librarian recommends a thorough review and update to align documentation with recent code changes. This proposal adds a note to prompt human reviewers to verify and update the content accordingly, without making direct content changes automatically.
 
 ## Suggested PR body
 
 This draft PR should be opened only after a maintainer applies and validates the proposed documentation changes.
 
-## Advisory Note
+# ⚠️ Human Review Required
 
-**Important:** This document is currently outdated relative to the latest codebase changes. Multiple core freshness review tool files have been updated since the last documentation commit. To ensure accurate understanding and effective use, please thoroughly review and update this ADR to align with the current implementation.
+This document (ADR-015: Deterministic freshness review tool) has been identified as potentially out-of-date due to recent code changes affecting its subject matter. It requires a thorough human review and update to ensure accuracy and alignment with the current implementation.
+
+Please review the document carefully and update the content, examples, and references as needed to reflect the latest codebase and design decisions.
 
 ---
 
-*This is a non-mutating advisory patch proposal. No source files were edited. Human review is required to plan and apply necessary documentation updates.*
+*This note is automatically added by the Docs Librarian as part of the documentation maintenance process.*
 
 ## Suggested Docs Librarian comment
 
@@ -38,21 +40,23 @@ Human review required: `yes`
 
 ### Rationale
 
-The ADR-015 document is marked as real-stale with high semantic impact due to multiple code updates after the last doc commit. The documentation impacts understanding of key functionality and should be thoroughly updated to match the latest codebase changes. This proposal adds a non-mutating advisory note to prompt maintainers to review and update the document accordingly.
+The ADR-015 document is marked as real-stale with high semantic impact and high confidence. The Docs Librarian recommends a thorough review and update to align documentation with recent code changes. This proposal adds a note to prompt human reviewers to verify and update the content accordingly, without making direct content changes automatically.
 
 ### Proposed changes
 
-- Add an advisory note at the end of the document indicating that the documentation is outdated and requires thorough updating to reflect recent code changes.
+- Add a prominent note at the top of the document indicating that the document requires human review and update to reflect recent code changes and semantic drift.
 
 ### Patch proposal artifact
 
-## Advisory Note
+# ⚠️ Human Review Required
 
-**Important:** This document is currently outdated relative to the latest codebase changes. Multiple core freshness review tool files have been updated since the last documentation commit. To ensure accurate understanding and effective use, please thoroughly review and update this ADR to align with the current implementation.
+This document (ADR-015: Deterministic freshness review tool) has been identified as potentially out-of-date due to recent code changes affecting its subject matter. It requires a thorough human review and update to ensure accuracy and alignment with the current implementation.
+
+Please review the document carefully and update the content, examples, and references as needed to reflect the latest codebase and design decisions.
 
 ---
 
-*This is a non-mutating advisory patch proposal. No source files were edited. Human review is required to plan and apply necessary documentation updates.*
+*This note is automatically added by the Docs Librarian as part of the documentation maintenance process.*
 
 ## Maintainer checklist
 
