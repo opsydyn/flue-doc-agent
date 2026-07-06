@@ -10,24 +10,21 @@ Recommended PR title: Draft docs freshness proposal: packages/docs/src/content/d
 
 ## Why this PR exists
 
-The ADR-012 document is marked as real-stale with medium semantic impact and high confidence, indicating potential semantic drift and dead links. A human review is necessary to verify and update the documentation to reflect the latest code changes and fix dead links. This proposal does not mutate the source files but flags the document for human review.
+The ADR-012 document is marked as real-stale with medium semantic impact and high confidence. The advisory recommends updating the documentation to reflect code changes and fixing dead links. This proposal does not modify the source content but adds a note to prompt human review to ensure accuracy and completeness before any updates.
 
 ## Suggested PR body
 
 This draft PR should be opened only after a maintainer applies and validates the proposed documentation changes.
 
-# Human Review Required: ADR-012 Freshness Signals Analytics
+# ⚠️ Human Review Required
 
-This document has been identified as potentially outdated due to recent code changes and dead links.
+This document (ADR-012: Freshness signals — GitHub Traffic API + One Dollar Stats) has been flagged as potentially outdated with medium semantic impact. It contains dead links and may not fully reflect recent code changes.
 
-**Action:** Please review and update the documentation to ensure it accurately reflects the current implementation of freshness signals, including GitHub Traffic API and One Dollar Stats integration.
+**Action:** Please review and update the documentation to ensure accuracy and fix any dead links before relying on it for decision-making.
 
-**Reason:**
-- Medium semantic impact with high confidence.
-- Real-stale classification.
-- Dead links reduce usability.
+---
 
-No automated changes are proposed at this time. Human expertise is required to validate and update the content accordingly.
+*This note is added automatically by the Docs Librarian as a reminder to maintain documentation quality.*
 
 ## Suggested Docs Librarian comment
 
@@ -43,26 +40,23 @@ Human review required: `yes`
 
 ### Rationale
 
-The ADR-012 document is marked as real-stale with medium semantic impact and high confidence, indicating potential semantic drift and dead links. A human review is necessary to verify and update the documentation to reflect the latest code changes and fix dead links. This proposal does not mutate the source files but flags the document for human review.
+The ADR-012 document is marked as real-stale with medium semantic impact and high confidence. The advisory recommends updating the documentation to reflect code changes and fixing dead links. This proposal does not modify the source content but adds a note to prompt human review to ensure accuracy and completeness before any updates.
 
 ### Proposed changes
 
-- Review the generated advisory report manually.
+- Add a prominent note at the top of the document to indicate that human review is required due to possible outdated content and dead links.
 
 ### Patch proposal artifact
 
-# Human Review Required: ADR-012 Freshness Signals Analytics
+# ⚠️ Human Review Required
 
-This document has been identified as potentially outdated due to recent code changes and dead links.
+This document (ADR-012: Freshness signals — GitHub Traffic API + One Dollar Stats) has been flagged as potentially outdated with medium semantic impact. It contains dead links and may not fully reflect recent code changes.
 
-**Action:** Please review and update the documentation to ensure it accurately reflects the current implementation of freshness signals, including GitHub Traffic API and One Dollar Stats integration.
+**Action:** Please review and update the documentation to ensure accuracy and fix any dead links before relying on it for decision-making.
 
-**Reason:**
-- Medium semantic impact with high confidence.
-- Real-stale classification.
-- Dead links reduce usability.
+---
 
-No automated changes are proposed at this time. Human expertise is required to validate and update the content accordingly.
+*This note is added automatically by the Docs Librarian as a reminder to maintain documentation quality.*
 
 ## Maintainer checklist
 
