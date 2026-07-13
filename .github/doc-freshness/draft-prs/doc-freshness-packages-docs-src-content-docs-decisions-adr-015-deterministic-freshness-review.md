@@ -10,21 +10,25 @@ Recommended PR title: Draft docs freshness proposal: packages/docs/src/content/d
 
 ## Why this PR exists
 
-The ADR-015 document is marked as real-stale with high semantic impact and high confidence. The Docs Librarian recommends a thorough review and update to align documentation with recent code changes. This proposal adds a note to prompt human reviewers to verify and update the content accordingly, without making direct content changes automatically.
+The ADR-015 document is flagged as real-stale with high semantic impact due to multiple code updates after the document was written. This indicates significant semantic drift requiring urgent update. Since the document is critical and complex, a human review is necessary to revise and update the documentation to reflect recent code changes accurately. No direct edits are proposed here to avoid unintended semantic changes; instead, a clear advisory note is added to prompt human maintainers to review and update the document accordingly.
 
 ## Suggested PR body
 
 This draft PR should be opened only after a maintainer applies and validates the proposed documentation changes.
 
-# ⚠️ Human Review Required
+# Advisory: Human Review Required
 
-This document (ADR-015: Deterministic freshness review tool) has been identified as potentially out-of-date due to recent code changes affecting its subject matter. It requires a thorough human review and update to ensure accuracy and alignment with the current implementation.
+**This document (ADR-015: Deterministic freshness review tool) is currently outdated and requires urgent human review.**
 
-Please review the document carefully and update the content, examples, and references as needed to reflect the latest codebase and design decisions.
+- Multiple code updates have occurred since this ADR was authored.
+- Significant semantic drift is likely.
+- Please revise the documentation to reflect recent code changes.
+
+_No automated changes have been applied to avoid semantic errors. This note is to prompt maintainers to prioritize updating this critical documentation._
 
 ---
 
-*This note is automatically added by the Docs Librarian as part of the documentation maintenance process.*
+*This advisory is generated automatically to ensure documentation accuracy and reliability.*
 
 ## Suggested Docs Librarian comment
 
@@ -40,23 +44,27 @@ Human review required: `yes`
 
 ### Rationale
 
-The ADR-015 document is marked as real-stale with high semantic impact and high confidence. The Docs Librarian recommends a thorough review and update to align documentation with recent code changes. This proposal adds a note to prompt human reviewers to verify and update the content accordingly, without making direct content changes automatically.
+The ADR-015 document is flagged as real-stale with high semantic impact due to multiple code updates after the document was written. This indicates significant semantic drift requiring urgent update. Since the document is critical and complex, a human review is necessary to revise and update the documentation to reflect recent code changes accurately. No direct edits are proposed here to avoid unintended semantic changes; instead, a clear advisory note is added to prompt human maintainers to review and update the document accordingly.
 
 ### Proposed changes
 
-- Add a prominent note at the top of the document indicating that the document requires human review and update to reflect recent code changes and semantic drift.
+- Add a prominent advisory note at the top of the document indicating that the document is outdated and requires human review and revision to align with recent code changes.
 
 ### Patch proposal artifact
 
-# ⚠️ Human Review Required
+# Advisory: Human Review Required
 
-This document (ADR-015: Deterministic freshness review tool) has been identified as potentially out-of-date due to recent code changes affecting its subject matter. It requires a thorough human review and update to ensure accuracy and alignment with the current implementation.
+**This document (ADR-015: Deterministic freshness review tool) is currently outdated and requires urgent human review.**
 
-Please review the document carefully and update the content, examples, and references as needed to reflect the latest codebase and design decisions.
+- Multiple code updates have occurred since this ADR was authored.
+- Significant semantic drift is likely.
+- Please revise the documentation to reflect recent code changes.
+
+_No automated changes have been applied to avoid semantic errors. This note is to prompt maintainers to prioritize updating this critical documentation._
 
 ---
 
-*This note is automatically added by the Docs Librarian as part of the documentation maintenance process.*
+*This advisory is generated automatically to ensure documentation accuracy and reliability.*
 
 ## Maintainer checklist
 
