@@ -10,25 +10,23 @@ Recommended PR title: Draft docs freshness proposal: packages/docs/src/content/d
 
 ## Why this PR exists
 
-The ADR-015 document is flagged as real-stale with high semantic impact due to multiple code updates after the document was written. This indicates significant semantic drift requiring urgent update. Since the document is critical and complex, a human review is necessary to revise and update the documentation to reflect recent code changes accurately. No direct edits are proposed here to avoid unintended semantic changes; instead, a clear advisory note is added to prompt human maintainers to review and update the document accordingly.
+The document ADR-015 is flagged as real-stale with high semantic impact due to multiple code updates after the document was written. The recommended action is to update the document to reflect the latest code changes. This proposal does not change the document content but adds a human review advisory note to prompt maintainers to verify and update the document accordingly.
 
 ## Suggested PR body
 
 This draft PR should be opened only after a maintainer applies and validates the proposed documentation changes.
 
-# Advisory: Human Review Required
+## Advisory Note for Human Review
 
-**This document (ADR-015: Deterministic freshness review tool) is currently outdated and requires urgent human review.**
+This document has been identified as potentially outdated due to multiple code updates after its last revision. It is recommended to review and update the content to ensure it accurately reflects the latest code changes and current implementation.
 
-- Multiple code updates have occurred since this ADR was authored.
-- Significant semantic drift is likely.
-- Please revise the documentation to reflect recent code changes.
+Please verify the following:
 
-_No automated changes have been applied to avoid semantic errors. This note is to prompt maintainers to prioritize updating this critical documentation._
+- Confirm that the scoring logic and tool behavior described match the current implementation.
+- Update any code references or examples that may have changed.
+- Ensure that the non-goals and implementation plan are still valid.
 
----
-
-*This advisory is generated automatically to ensure documentation accuracy and reliability.*
+This advisory does not modify the document content but serves as a prompt for maintainers to perform necessary updates.
 
 ## Suggested Docs Librarian comment
 
@@ -44,27 +42,25 @@ Human review required: `yes`
 
 ### Rationale
 
-The ADR-015 document is flagged as real-stale with high semantic impact due to multiple code updates after the document was written. This indicates significant semantic drift requiring urgent update. Since the document is critical and complex, a human review is necessary to revise and update the documentation to reflect recent code changes accurately. No direct edits are proposed here to avoid unintended semantic changes; instead, a clear advisory note is added to prompt human maintainers to review and update the document accordingly.
+The document ADR-015 is flagged as real-stale with high semantic impact due to multiple code updates after the document was written. The recommended action is to update the document to reflect the latest code changes. This proposal does not change the document content but adds a human review advisory note to prompt maintainers to verify and update the document accordingly.
 
 ### Proposed changes
 
-- Add a prominent advisory note at the top of the document indicating that the document is outdated and requires human review and revision to align with recent code changes.
+- Add a note at the end of the document advising human review to update the document to reflect latest code changes.
 
 ### Patch proposal artifact
 
-# Advisory: Human Review Required
+## Advisory Note for Human Review
 
-**This document (ADR-015: Deterministic freshness review tool) is currently outdated and requires urgent human review.**
+This document has been identified as potentially outdated due to multiple code updates after its last revision. It is recommended to review and update the content to ensure it accurately reflects the latest code changes and current implementation.
 
-- Multiple code updates have occurred since this ADR was authored.
-- Significant semantic drift is likely.
-- Please revise the documentation to reflect recent code changes.
+Please verify the following:
 
-_No automated changes have been applied to avoid semantic errors. This note is to prompt maintainers to prioritize updating this critical documentation._
+- Confirm that the scoring logic and tool behavior described match the current implementation.
+- Update any code references or examples that may have changed.
+- Ensure that the non-goals and implementation plan are still valid.
 
----
-
-*This advisory is generated automatically to ensure documentation accuracy and reliability.*
+This advisory does not modify the document content but serves as a prompt for maintainers to perform necessary updates.
 
 ## Maintainer checklist
 
