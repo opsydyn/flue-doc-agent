@@ -10,23 +10,21 @@ Recommended PR title: Draft docs freshness proposal: packages/docs/src/content/d
 
 ## Why this PR exists
 
-The document ADR-015 is flagged as real-stale with high semantic impact due to multiple code updates after the document was written. The recommended action is to update the document to reflect the latest code changes. This proposal does not change the document content but adds a human review advisory note to prompt maintainers to verify and update the document accordingly.
+The ADR-015 document is marked as real-stale with high semantic impact and multiple code updates after the doc, indicating it is likely significantly outdated. The Docs Librarian recommends updating the documentation to reflect the latest code changes. This proposal adds a non-mutating advisory note to prompt human review before any updates are made, ensuring careful consideration of the required changes.
 
 ## Suggested PR body
 
 This draft PR should be opened only after a maintainer applies and validates the proposed documentation changes.
 
-## Advisory Note for Human Review
+## Human Review Advisory
 
-This document has been identified as potentially outdated due to multiple code updates after its last revision. It is recommended to review and update the content to ensure it accurately reflects the latest code changes and current implementation.
+This document has been identified as significantly outdated due to multiple code updates after its last revision. It requires a thorough human review to update the documentation to reflect the latest code changes accurately.
 
-Please verify the following:
+Please verify all code references, scoring logic, and tool contracts before applying any modifications.
 
-- Confirm that the scoring logic and tool behavior described match the current implementation.
-- Update any code references or examples that may have changed.
-- Ensure that the non-goals and implementation plan are still valid.
+---
 
-This advisory does not modify the document content but serves as a prompt for maintainers to perform necessary updates.
+*This is a non-mutating advisory patch proposal to prompt human review before updating the document.*
 
 ## Suggested Docs Librarian comment
 
@@ -42,25 +40,23 @@ Human review required: `yes`
 
 ### Rationale
 
-The document ADR-015 is flagged as real-stale with high semantic impact due to multiple code updates after the document was written. The recommended action is to update the document to reflect the latest code changes. This proposal does not change the document content but adds a human review advisory note to prompt maintainers to verify and update the document accordingly.
+The ADR-015 document is marked as real-stale with high semantic impact and multiple code updates after the doc, indicating it is likely significantly outdated. The Docs Librarian recommends updating the documentation to reflect the latest code changes. This proposal adds a non-mutating advisory note to prompt human review before any updates are made, ensuring careful consideration of the required changes.
 
 ### Proposed changes
 
-- Add a note at the end of the document advising human review to update the document to reflect latest code changes.
+- Add a human review advisory note at the end of the document in markdown format.
 
 ### Patch proposal artifact
 
-## Advisory Note for Human Review
+## Human Review Advisory
 
-This document has been identified as potentially outdated due to multiple code updates after its last revision. It is recommended to review and update the content to ensure it accurately reflects the latest code changes and current implementation.
+This document has been identified as significantly outdated due to multiple code updates after its last revision. It requires a thorough human review to update the documentation to reflect the latest code changes accurately.
 
-Please verify the following:
+Please verify all code references, scoring logic, and tool contracts before applying any modifications.
 
-- Confirm that the scoring logic and tool behavior described match the current implementation.
-- Update any code references or examples that may have changed.
-- Ensure that the non-goals and implementation plan are still valid.
+---
 
-This advisory does not modify the document content but serves as a prompt for maintainers to perform necessary updates.
+*This is a non-mutating advisory patch proposal to prompt human review before updating the document.*
 
 ## Maintainer checklist
 
