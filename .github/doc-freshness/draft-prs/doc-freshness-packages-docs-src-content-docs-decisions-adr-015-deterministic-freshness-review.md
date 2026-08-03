@@ -10,21 +10,19 @@ Recommended PR title: Draft docs freshness proposal: packages/docs/src/content/d
 
 ## Why this PR exists
 
-The ADR-015 document is marked as real-stale with high semantic impact and multiple code updates after the doc, indicating it is likely significantly outdated. The Docs Librarian recommends updating the documentation to reflect the latest code changes. This proposal adds a non-mutating advisory note to prompt human review before any updates are made, ensuring careful consideration of the required changes.
+The ADR-015 document is marked as real-stale with high semantic impact due to multiple code updates after the doc commit, indicating potential semantic drift. The documentation should be thoroughly reviewed and updated to reflect the latest code changes. This proposal does not mutate the source file but adds a human review advisory note in the documentation to prompt maintainers to verify and update the content accordingly.
 
 ## Suggested PR body
 
 This draft PR should be opened only after a maintainer applies and validates the proposed documentation changes.
 
-## Human Review Advisory
+# Advisory Note
 
-This document has been identified as significantly outdated due to multiple code updates after its last revision. It requires a thorough human review to update the documentation to reflect the latest code changes accurately.
-
-Please verify all code references, scoring logic, and tool contracts before applying any modifications.
+> **Attention:** This ADR-015 documentation is potentially outdated due to multiple recent code changes affecting core freshness review logic. Please conduct a thorough review and update the documentation to ensure it accurately reflects the current implementation and behavior of the deterministic freshness review tool.
 
 ---
 
-*This is a non-mutating advisory patch proposal to prompt human review before updating the document.*
+*This note is for maintainers and reviewers to prioritize updating this document.*
 
 ## Suggested Docs Librarian comment
 
@@ -40,23 +38,21 @@ Human review required: `yes`
 
 ### Rationale
 
-The ADR-015 document is marked as real-stale with high semantic impact and multiple code updates after the doc, indicating it is likely significantly outdated. The Docs Librarian recommends updating the documentation to reflect the latest code changes. This proposal adds a non-mutating advisory note to prompt human review before any updates are made, ensuring careful consideration of the required changes.
+The ADR-015 document is marked as real-stale with high semantic impact due to multiple code updates after the doc commit, indicating potential semantic drift. The documentation should be thoroughly reviewed and updated to reflect the latest code changes. This proposal does not mutate the source file but adds a human review advisory note in the documentation to prompt maintainers to verify and update the content accordingly.
 
 ### Proposed changes
 
-- Add a human review advisory note at the end of the document in markdown format.
+- Add a prominent advisory note at the top of the document indicating the need for thorough human review and update to reflect recent code changes.
 
 ### Patch proposal artifact
 
-## Human Review Advisory
+# Advisory Note
 
-This document has been identified as significantly outdated due to multiple code updates after its last revision. It requires a thorough human review to update the documentation to reflect the latest code changes accurately.
-
-Please verify all code references, scoring logic, and tool contracts before applying any modifications.
+> **Attention:** This ADR-015 documentation is potentially outdated due to multiple recent code changes affecting core freshness review logic. Please conduct a thorough review and update the documentation to ensure it accurately reflects the current implementation and behavior of the deterministic freshness review tool.
 
 ---
 
-*This is a non-mutating advisory patch proposal to prompt human review before updating the document.*
+*This note is for maintainers and reviewers to prioritize updating this document.*
 
 ## Maintainer checklist
 
