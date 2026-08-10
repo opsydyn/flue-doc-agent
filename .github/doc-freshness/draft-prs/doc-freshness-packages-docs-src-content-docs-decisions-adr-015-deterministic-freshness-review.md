@@ -10,19 +10,23 @@ Recommended PR title: Draft docs freshness proposal: packages/docs/src/content/d
 
 ## Why this PR exists
 
-The ADR-015 document is marked as real-stale with high semantic impact due to multiple code updates after the doc commit, indicating potential semantic drift. The documentation should be thoroughly reviewed and updated to reflect the latest code changes. This proposal does not mutate the source file but adds a human review advisory note in the documentation to prompt maintainers to verify and update the content accordingly.
+Multiple code files updated after doc commit; high likelihood of outdated documentation. OpenAI patch request error
 
 ## Suggested PR body
 
 This draft PR should be opened only after a maintainer applies and validates the proposed documentation changes.
 
-# Advisory Note
+### Patch proposal for `packages/docs/src/content/docs/decisions/ADR-015-deterministic-freshness-review-tool.md`
 
-> **Attention:** This ADR-015 documentation is potentially outdated due to multiple recent code changes affecting core freshness review logic. Please conduct a thorough review and update the documentation to ensure it accurately reflects the current implementation and behavior of the deterministic freshness review tool.
+**Why this document:** low deterministic priority, 0 30d views, high semantic impact, real-stale, high confidence
 
----
+**Semantic impact:** high (high confidence)
 
-*This note is for maintainers and reviewers to prioritize updating this document.*
+**Proposed changes:**
+
+- Thoroughly review and update documentation to match latest code
+
+**Human review required:** yes. This artifact does not modify source docs automatically.
 
 ## Suggested Docs Librarian comment
 
@@ -38,21 +42,25 @@ Human review required: `yes`
 
 ### Rationale
 
-The ADR-015 document is marked as real-stale with high semantic impact due to multiple code updates after the doc commit, indicating potential semantic drift. The documentation should be thoroughly reviewed and updated to reflect the latest code changes. This proposal does not mutate the source file but adds a human review advisory note in the documentation to prompt maintainers to verify and update the content accordingly.
+Multiple code files updated after doc commit; high likelihood of outdated documentation. OpenAI patch request error
 
 ### Proposed changes
 
-- Add a prominent advisory note at the top of the document indicating the need for thorough human review and update to reflect recent code changes.
+- Thoroughly review and update documentation to match latest code
 
 ### Patch proposal artifact
 
-# Advisory Note
+### Patch proposal for `packages/docs/src/content/docs/decisions/ADR-015-deterministic-freshness-review-tool.md`
 
-> **Attention:** This ADR-015 documentation is potentially outdated due to multiple recent code changes affecting core freshness review logic. Please conduct a thorough review and update the documentation to ensure it accurately reflects the current implementation and behavior of the deterministic freshness review tool.
+**Why this document:** low deterministic priority, 0 30d views, high semantic impact, real-stale, high confidence
 
----
+**Semantic impact:** high (high confidence)
 
-*This note is for maintainers and reviewers to prioritize updating this document.*
+**Proposed changes:**
+
+- Thoroughly review and update documentation to match latest code
+
+**Human review required:** yes. This artifact does not modify source docs automatically.
 
 ## Maintainer checklist
 
