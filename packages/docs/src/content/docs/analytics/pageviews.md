@@ -5,7 +5,7 @@ description: Generated from One Dollar Stats analytics by the doc-freshness work
 
 # One Dollar Stats 30d Page Views
 
-_Generated: Monday 10 August 2026 at 09:37 UTC._
+_Generated: Monday 17 August 2026 at 09:47 UTC._
 
 | Page | Views |
 | --- | ---: |
