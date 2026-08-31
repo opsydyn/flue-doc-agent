@@ -10,7 +10,7 @@ Recommended PR title: Draft docs freshness proposal: packages/docs/src/content/d
 
 ## Why this PR exists
 
-The ADR-015 document is marked as real-stale with high semantic impact due to multiple code updates after the doc commit indicating significant semantic drift. The Docs Librarian recommends a thorough review and update to match the latest code. This proposal adds a concise advisory note to prompt human reviewers to verify and update the documentation accordingly without making direct content changes.
+The ADR-015 document is marked as real-stale with high semantic impact and requires updating to reflect latest code changes. This proposal adds a human review note to prompt maintainers to verify and update the documentation accordingly. No direct content changes are made to avoid premature edits without human oversight.
 
 ## Suggested PR body
 
@@ -18,13 +18,15 @@ This draft PR should be opened only after a maintainer applies and validates the
 
 # ⚠️ Human Review Required
 
-**Note:** This document (ADR-015) has been identified as potentially outdated due to multiple code updates after its last commit. It requires a thorough human review and update to ensure accuracy and alignment with the latest codebase.
+This document (ADR-015: Deterministic freshness review tool) has been identified as potentially outdated due to multiple code updates since its last revision. It requires a thorough human review to ensure the documentation accurately reflects the latest implementation and codebase.
 
-Please verify the content and update as necessary to reflect current implementation details and policies.
+## Recommended Actions
 
----
+- Review the current implementation of the deterministic freshness review tool.
+- Update the documentation to align with any recent code changes.
+- Verify that all examples, interfaces, and descriptions remain accurate.
 
-*(No direct content changes have been made in this proposal.)*
+*This note is to ensure the documentation remains reliable and useful for all stakeholders.*
 
 ## Suggested Docs Librarian comment
 
@@ -40,23 +42,25 @@ Human review required: `yes`
 
 ### Rationale
 
-The ADR-015 document is marked as real-stale with high semantic impact due to multiple code updates after the doc commit indicating significant semantic drift. The Docs Librarian recommends a thorough review and update to match the latest code. This proposal adds a concise advisory note to prompt human reviewers to verify and update the documentation accordingly without making direct content changes.
+The ADR-015 document is marked as real-stale with high semantic impact and requires updating to reflect latest code changes. This proposal adds a human review note to prompt maintainers to verify and update the documentation accordingly. No direct content changes are made to avoid premature edits without human oversight.
 
 ### Proposed changes
 
-- Add a prominent note at the top of the document advising a thorough human review and update to align with recent code changes.
+- Add a prominent note at the top of the document indicating that the content requires human review and update to reflect recent code changes.
 
 ### Patch proposal artifact
 
 # ⚠️ Human Review Required
 
-**Note:** This document (ADR-015) has been identified as potentially outdated due to multiple code updates after its last commit. It requires a thorough human review and update to ensure accuracy and alignment with the latest codebase.
+This document (ADR-015: Deterministic freshness review tool) has been identified as potentially outdated due to multiple code updates since its last revision. It requires a thorough human review to ensure the documentation accurately reflects the latest implementation and codebase.
 
-Please verify the content and update as necessary to reflect current implementation details and policies.
+## Recommended Actions
 
----
+- Review the current implementation of the deterministic freshness review tool.
+- Update the documentation to align with any recent code changes.
+- Verify that all examples, interfaces, and descriptions remain accurate.
 
-*(No direct content changes have been made in this proposal.)*
+*This note is to ensure the documentation remains reliable and useful for all stakeholders.*
 
 ## Maintainer checklist
 
