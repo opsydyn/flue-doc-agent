@@ -10,7 +10,7 @@ Recommended PR title: Draft docs freshness proposal: packages/docs/src/content/d
 
 ## Why this PR exists
 
-The ADR-015 document is marked as real-stale with high semantic impact and multiple code updates after the doc commit. A thorough update is recommended, but this proposal only adds a non-mutating advisory note to prompt human review and revision.
+The document ADR-015 is marked as real-stale with high semantic impact and requires a thorough review to ensure it matches the latest codebase. This proposal adds a non-mutating advisory note to prompt human reviewers to verify and update the document accordingly without making direct changes.
 
 ## Suggested PR body
 
@@ -18,11 +18,9 @@ This draft PR should be opened only after a maintainer applies and validates the
 
 # Advisory Note
 
-> **Attention:** This documentation is currently outdated due to multiple recent code changes that are not yet reflected here. Please conduct a thorough review and update the content to ensure accuracy and alignment with the latest implementation.
+> **Note:** This document is currently classified as **real-stale** with high semantic impact. Multiple code files have been updated after the last document commit, indicating potential semantic drift. It is recommended to thoroughly review and update this document to ensure it accurately reflects the latest codebase and implementation details.
 
----
-
-(Existing content follows unchanged)
+Please verify all references, code examples, and descriptions before making any changes.
 
 ## Suggested Docs Librarian comment
 
@@ -38,21 +36,19 @@ Human review required: `yes`
 
 ### Rationale
 
-The ADR-015 document is marked as real-stale with high semantic impact and multiple code updates after the doc commit. A thorough update is recommended, but this proposal only adds a non-mutating advisory note to prompt human review and revision.
+The document ADR-015 is marked as real-stale with high semantic impact and requires a thorough review to ensure it matches the latest codebase. This proposal adds a non-mutating advisory note to prompt human reviewers to verify and update the document accordingly without making direct changes.
 
 ### Proposed changes
 
-- Add a prominent advisory note at the top of the document indicating that the documentation is outdated and requires thorough review and update to reflect recent code changes.
+- Add a prominent advisory note at the beginning of the document indicating that the document is stale and requires thorough human review before any updates.
 
 ### Patch proposal artifact
 
 # Advisory Note
 
-> **Attention:** This documentation is currently outdated due to multiple recent code changes that are not yet reflected here. Please conduct a thorough review and update the content to ensure accuracy and alignment with the latest implementation.
+> **Note:** This document is currently classified as **real-stale** with high semantic impact. Multiple code files have been updated after the last document commit, indicating potential semantic drift. It is recommended to thoroughly review and update this document to ensure it accurately reflects the latest codebase and implementation details.
 
----
-
-(Existing content follows unchanged)
+Please verify all references, code examples, and descriptions before making any changes.
 
 ## Maintainer checklist
 
