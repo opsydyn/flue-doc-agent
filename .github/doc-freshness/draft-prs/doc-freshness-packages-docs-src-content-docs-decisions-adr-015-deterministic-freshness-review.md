@@ -10,21 +10,22 @@ Recommended PR title: Draft docs freshness proposal: packages/docs/src/content/d
 
 ## Why this PR exists
 
-The ADR-015 document is marked as real-stale with high semantic impact and confidence, indicating significant potential outdatedness due to multiple code updates. The Docs Librarian recommends a thorough review and update to reflect the latest code changes. This proposal adds a note to prompt human reviewers to verify and update the documentation accordingly, without making any direct content changes.
+The ADR-015 document is marked as real-stale with high semantic impact due to multiple code updates after the document was written. The Docs Librarian recommends a thorough update to match latest code changes. This proposal adds a note to prompt human reviewers to verify and update the documentation accordingly, without making direct content changes automatically.
 
 ## Suggested PR body
 
 This draft PR should be opened only after a maintainer applies and validates the proposed documentation changes.
 
-# Note for Reviewers
+# ⚠️ Human Review Required
 
-**This document (ADR-015) has been identified as potentially outdated due to multiple code updates since its last revision. It requires thorough human review and update to ensure accuracy and alignment with the latest codebase.**
+This document (ADR-015: Deterministic freshness review tool) has been identified as **real-stale** with **high semantic impact**. Multiple code files have been updated after this document was last revised, indicating significant semantic changes.
 
-Please verify all technical details, code references, and recommendations before approving or publishing further changes.
+**Action:** Please thoroughly review and update this documentation to ensure it accurately reflects the latest code changes and current implementation.
 
 ---
 
-*(No direct content changes are made in this proposal; it serves as a prompt for human review.)*
+*This note is automatically added by the Docs Librarian as part of the documentation maintenance process.*
+
 
 ## Suggested Docs Librarian comment
 
@@ -40,23 +41,24 @@ Human review required: `yes`
 
 ### Rationale
 
-The ADR-015 document is marked as real-stale with high semantic impact and confidence, indicating significant potential outdatedness due to multiple code updates. The Docs Librarian recommends a thorough review and update to reflect the latest code changes. This proposal adds a note to prompt human reviewers to verify and update the documentation accordingly, without making any direct content changes.
+The ADR-015 document is marked as real-stale with high semantic impact due to multiple code updates after the document was written. The Docs Librarian recommends a thorough update to match latest code changes. This proposal adds a note to prompt human reviewers to verify and update the documentation accordingly, without making direct content changes automatically.
 
 ### Proposed changes
 
-- Add a prominent note at the beginning of the document indicating that the content requires thorough human review and update to reflect the latest code changes.
+- Add a prominent note at the top of the document to indicate that the document requires human review and update to reflect recent code changes.
 
 ### Patch proposal artifact
 
-# Note for Reviewers
+# ⚠️ Human Review Required
 
-**This document (ADR-015) has been identified as potentially outdated due to multiple code updates since its last revision. It requires thorough human review and update to ensure accuracy and alignment with the latest codebase.**
+This document (ADR-015: Deterministic freshness review tool) has been identified as **real-stale** with **high semantic impact**. Multiple code files have been updated after this document was last revised, indicating significant semantic changes.
 
-Please verify all technical details, code references, and recommendations before approving or publishing further changes.
+**Action:** Please thoroughly review and update this documentation to ensure it accurately reflects the latest code changes and current implementation.
 
 ---
 
-*(No direct content changes are made in this proposal; it serves as a prompt for human review.)*
+*This note is automatically added by the Docs Librarian as part of the documentation maintenance process.*
+
 
 ## Maintainer checklist
 
