@@ -10,7 +10,7 @@ Recommended PR title: Draft docs freshness proposal: packages/docs/src/content/d
 
 ## Why this PR exists
 
-The ADR-015 document is marked as real-stale with high semantic impact due to multiple code updates after the document was written. The Docs Librarian recommends a thorough update to match latest code changes. This proposal adds a note to prompt human reviewers to verify and update the documentation accordingly, without making direct content changes automatically.
+The ADR-015 document is marked as real-stale with high semantic impact and multiple code updates after the last documentation commit, indicating potential outdated content. The Docs Librarian recommends a thorough review and update to reflect recent code changes. This proposal adds a human review note to prompt maintainers to verify and update the content accordingly without making direct content changes.
 
 ## Suggested PR body
 
@@ -18,14 +18,13 @@ This draft PR should be opened only after a maintainer applies and validates the
 
 # ⚠️ Human Review Required
 
-This document (ADR-015: Deterministic freshness review tool) has been identified as **real-stale** with **high semantic impact**. Multiple code files have been updated after this document was last revised, indicating significant semantic changes.
+**Note:** This document (ADR-015: Deterministic freshness review tool) has been flagged as potentially outdated due to multiple code updates after the last documentation commit. It has a high semantic impact and is classified as real-stale.
 
-**Action:** Please thoroughly review and update this documentation to ensure it accurately reflects the latest code changes and current implementation.
+Please thoroughly review and update this documentation to ensure it accurately reflects the current implementation and recent code changes.
 
 ---
 
-*This note is automatically added by the Docs Librarian as part of the documentation maintenance process.*
-
+(Existing content follows unchanged)
 
 ## Suggested Docs Librarian comment
 
@@ -41,24 +40,23 @@ Human review required: `yes`
 
 ### Rationale
 
-The ADR-015 document is marked as real-stale with high semantic impact due to multiple code updates after the document was written. The Docs Librarian recommends a thorough update to match latest code changes. This proposal adds a note to prompt human reviewers to verify and update the documentation accordingly, without making direct content changes automatically.
+The ADR-015 document is marked as real-stale with high semantic impact and multiple code updates after the last documentation commit, indicating potential outdated content. The Docs Librarian recommends a thorough review and update to reflect recent code changes. This proposal adds a human review note to prompt maintainers to verify and update the content accordingly without making direct content changes.
 
 ### Proposed changes
 
-- Add a prominent note at the top of the document to indicate that the document requires human review and update to reflect recent code changes.
+- Add a prominent note at the top of the document indicating that the content requires human review due to potential outdated information and recent code changes.
 
 ### Patch proposal artifact
 
 # ⚠️ Human Review Required
 
-This document (ADR-015: Deterministic freshness review tool) has been identified as **real-stale** with **high semantic impact**. Multiple code files have been updated after this document was last revised, indicating significant semantic changes.
+**Note:** This document (ADR-015: Deterministic freshness review tool) has been flagged as potentially outdated due to multiple code updates after the last documentation commit. It has a high semantic impact and is classified as real-stale.
 
-**Action:** Please thoroughly review and update this documentation to ensure it accurately reflects the latest code changes and current implementation.
+Please thoroughly review and update this documentation to ensure it accurately reflects the current implementation and recent code changes.
 
 ---
 
-*This note is automatically added by the Docs Librarian as part of the documentation maintenance process.*
-
+(Existing content follows unchanged)
 
 ## Maintainer checklist
 
