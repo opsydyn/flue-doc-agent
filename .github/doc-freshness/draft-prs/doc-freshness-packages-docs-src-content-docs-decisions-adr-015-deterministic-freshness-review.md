@@ -10,7 +10,7 @@ Recommended PR title: Draft docs freshness proposal: packages/docs/src/content/d
 
 ## Why this PR exists
 
-The ADR-015 document is marked as real-stale with high semantic impact and multiple code updates after the last documentation commit, indicating potential outdated content. The Docs Librarian recommends a thorough review and update to reflect recent code changes. This proposal adds a human review note to prompt maintainers to verify and update the content accordingly without making direct content changes.
+The ADR-015 document is marked as real-stale with high semantic impact due to multiple code updates after the last doc commit. The Docs Librarian recommends thoroughly updating this documentation to incorporate recent code changes. This proposal adds a human review note to prompt maintainers to verify and update the document accordingly without making direct content changes, ensuring no mutation of source files and highlighting the need for human intervention.
 
 ## Suggested PR body
 
@@ -18,13 +18,13 @@ This draft PR should be opened only after a maintainer applies and validates the
 
 # ⚠️ Human Review Required
 
-**Note:** This document (ADR-015: Deterministic freshness review tool) has been flagged as potentially outdated due to multiple code updates after the last documentation commit. It has a high semantic impact and is classified as real-stale.
+**Note:** This document (ADR-015: Deterministic freshness review tool) is currently outdated relative to recent code changes. It requires a thorough review and update by a human maintainer to ensure accuracy and completeness.
 
-Please thoroughly review and update this documentation to ensure it accurately reflects the current implementation and recent code changes.
+Please verify the documentation against the latest implementation and update accordingly.
 
 ---
 
-(Existing content follows unchanged)
+*(No direct content changes made in this proposal; this is a non-mutating advisory patch.)*
 
 ## Suggested Docs Librarian comment
 
@@ -40,23 +40,23 @@ Human review required: `yes`
 
 ### Rationale
 
-The ADR-015 document is marked as real-stale with high semantic impact and multiple code updates after the last documentation commit, indicating potential outdated content. The Docs Librarian recommends a thorough review and update to reflect recent code changes. This proposal adds a human review note to prompt maintainers to verify and update the content accordingly without making direct content changes.
+The ADR-015 document is marked as real-stale with high semantic impact due to multiple code updates after the last doc commit. The Docs Librarian recommends thoroughly updating this documentation to incorporate recent code changes. This proposal adds a human review note to prompt maintainers to verify and update the document accordingly without making direct content changes, ensuring no mutation of source files and highlighting the need for human intervention.
 
 ### Proposed changes
 
-- Add a prominent note at the top of the document indicating that the content requires human review due to potential outdated information and recent code changes.
+- Add a prominent note at the top of the document indicating that the document is out of date and requires human review to update it according to recent code changes.
 
 ### Patch proposal artifact
 
 # ⚠️ Human Review Required
 
-**Note:** This document (ADR-015: Deterministic freshness review tool) has been flagged as potentially outdated due to multiple code updates after the last documentation commit. It has a high semantic impact and is classified as real-stale.
+**Note:** This document (ADR-015: Deterministic freshness review tool) is currently outdated relative to recent code changes. It requires a thorough review and update by a human maintainer to ensure accuracy and completeness.
 
-Please thoroughly review and update this documentation to ensure it accurately reflects the current implementation and recent code changes.
+Please verify the documentation against the latest implementation and update accordingly.
 
 ---
 
-(Existing content follows unchanged)
+*(No direct content changes made in this proposal; this is a non-mutating advisory patch.)*
 
 ## Maintainer checklist
 
