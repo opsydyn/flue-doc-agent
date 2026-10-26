@@ -10,21 +10,25 @@ Recommended PR title: Draft docs freshness proposal: packages/docs/src/content/d
 
 ## Why this PR exists
 
-The ADR-015 document is marked as real-stale with high semantic impact due to multiple code updates after the last doc commit. The Docs Librarian recommends thoroughly updating this documentation to incorporate recent code changes. This proposal adds a human review note to prompt maintainers to verify and update the document accordingly without making direct content changes, ensuring no mutation of source files and highlighting the need for human intervention.
+The document is marked as real-stale with high semantic impact and requires revision to incorporate latest code changes. This proposal adds a concise advisory note to prompt human reviewers to update the documentation accordingly, without making any direct content changes or edits to the source file.
 
 ## Suggested PR body
 
 This draft PR should be opened only after a maintainer applies and validates the proposed documentation changes.
 
-# ⚠️ Human Review Required
+# Advisory Note
 
-**Note:** This document (ADR-015: Deterministic freshness review tool) is currently outdated relative to recent code changes. It requires a thorough review and update by a human maintainer to ensure accuracy and completeness.
+**This document requires revision:**
 
-Please verify the documentation against the latest implementation and update accordingly.
+- The content is currently outdated due to multiple code updates after the last documentation commit.
+- The document is classified as *real-stale* with *high* semantic impact and *high* confidence.
+- It is recommended to revise this ADR to incorporate the latest code changes to maintain accuracy and relevance.
+
+Please review and update the document accordingly to ensure it reflects the current state of the codebase and tooling.
 
 ---
 
-*(No direct content changes made in this proposal; this is a non-mutating advisory patch.)*
+*This advisory note is generated to assist human reviewers in prioritizing documentation updates and does not modify the original content.*
 
 ## Suggested Docs Librarian comment
 
@@ -40,23 +44,29 @@ Human review required: `yes`
 
 ### Rationale
 
-The ADR-015 document is marked as real-stale with high semantic impact due to multiple code updates after the last doc commit. The Docs Librarian recommends thoroughly updating this documentation to incorporate recent code changes. This proposal adds a human review note to prompt maintainers to verify and update the document accordingly without making direct content changes, ensuring no mutation of source files and highlighting the need for human intervention.
+The document is marked as real-stale with high semantic impact and requires revision to incorporate latest code changes. This proposal adds a concise advisory note to prompt human reviewers to update the documentation accordingly, without making any direct content changes or edits to the source file.
 
 ### Proposed changes
 
-- Add a prominent note at the top of the document indicating that the document is out of date and requires human review to update it according to recent code changes.
+- Add a prominent advisory note at the top of the document indicating the need for revision to reflect latest code changes.
+- Include a brief summary of the rationale for the advisory note referencing the stale classification and semantic impact.
+- Mark the proposal as requiring human review to ensure accuracy and completeness of the update.
 
 ### Patch proposal artifact
 
-# ⚠️ Human Review Required
+# Advisory Note
 
-**Note:** This document (ADR-015: Deterministic freshness review tool) is currently outdated relative to recent code changes. It requires a thorough review and update by a human maintainer to ensure accuracy and completeness.
+**This document requires revision:**
 
-Please verify the documentation against the latest implementation and update accordingly.
+- The content is currently outdated due to multiple code updates after the last documentation commit.
+- The document is classified as *real-stale* with *high* semantic impact and *high* confidence.
+- It is recommended to revise this ADR to incorporate the latest code changes to maintain accuracy and relevance.
+
+Please review and update the document accordingly to ensure it reflects the current state of the codebase and tooling.
 
 ---
 
-*(No direct content changes made in this proposal; this is a non-mutating advisory patch.)*
+*This advisory note is generated to assist human reviewers in prioritizing documentation updates and does not modify the original content.*
 
 ## Maintainer checklist
 
