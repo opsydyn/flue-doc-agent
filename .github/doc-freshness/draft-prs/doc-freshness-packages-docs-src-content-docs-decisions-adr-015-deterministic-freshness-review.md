@@ -10,25 +10,19 @@ Recommended PR title: Draft docs freshness proposal: packages/docs/src/content/d
 
 ## Why this PR exists
 
-The document is marked as real-stale with high semantic impact and requires revision to incorporate latest code changes. This proposal adds a concise advisory note to prompt human reviewers to update the documentation accordingly, without making any direct content changes or edits to the source file.
+The ADR-015 document is marked as real-stale with high semantic impact and multiple code updates after the last doc commit. The Docs Librarian recommends a thorough review and update to reflect the latest codebase. This proposal adds a concise note to prompt human reviewers to verify and update the documentation accordingly without making direct content changes.
 
 ## Suggested PR body
 
 This draft PR should be opened only after a maintainer applies and validates the proposed documentation changes.
 
-# Advisory Note
+## Note to reviewers
 
-**This document requires revision:**
-
-- The content is currently outdated due to multiple code updates after the last documentation commit.
-- The document is classified as *real-stale* with *high* semantic impact and *high* confidence.
-- It is recommended to revise this ADR to incorporate the latest code changes to maintain accuracy and relevance.
-
-Please review and update the document accordingly to ensure it reflects the current state of the codebase and tooling.
+This document has been flagged as real-stale with high semantic impact due to multiple code updates after the last documentation commit, including core freshness review tool changes. Please thoroughly review and update this ADR to ensure it accurately reflects the current codebase and tool behavior.
 
 ---
 
-*This advisory note is generated to assist human reviewers in prioritizing documentation updates and does not modify the original content.*
+*This note is for human reviewers and does not change the documented decisions or implementation details.*
 
 ## Suggested Docs Librarian comment
 
@@ -44,29 +38,21 @@ Human review required: `yes`
 
 ### Rationale
 
-The document is marked as real-stale with high semantic impact and requires revision to incorporate latest code changes. This proposal adds a concise advisory note to prompt human reviewers to update the documentation accordingly, without making any direct content changes or edits to the source file.
+The ADR-015 document is marked as real-stale with high semantic impact and multiple code updates after the last doc commit. The Docs Librarian recommends a thorough review and update to reflect the latest codebase. This proposal adds a concise note to prompt human reviewers to verify and update the documentation accordingly without making direct content changes.
 
 ### Proposed changes
 
-- Add a prominent advisory note at the top of the document indicating the need for revision to reflect latest code changes.
-- Include a brief summary of the rationale for the advisory note referencing the stale classification and semantic impact.
-- Mark the proposal as requiring human review to ensure accuracy and completeness of the update.
+- Add a 'Note to reviewers' section at the end of the document advising a thorough review and update to align with recent code changes.
 
 ### Patch proposal artifact
 
-# Advisory Note
+## Note to reviewers
 
-**This document requires revision:**
-
-- The content is currently outdated due to multiple code updates after the last documentation commit.
-- The document is classified as *real-stale* with *high* semantic impact and *high* confidence.
-- It is recommended to revise this ADR to incorporate the latest code changes to maintain accuracy and relevance.
-
-Please review and update the document accordingly to ensure it reflects the current state of the codebase and tooling.
+This document has been flagged as real-stale with high semantic impact due to multiple code updates after the last documentation commit, including core freshness review tool changes. Please thoroughly review and update this ADR to ensure it accurately reflects the current codebase and tool behavior.
 
 ---
 
-*This advisory note is generated to assist human reviewers in prioritizing documentation updates and does not modify the original content.*
+*This note is for human reviewers and does not change the documented decisions or implementation details.*
 
 ## Maintainer checklist
 
