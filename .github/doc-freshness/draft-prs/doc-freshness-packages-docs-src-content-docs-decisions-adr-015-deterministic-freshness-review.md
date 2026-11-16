@@ -10,19 +10,19 @@ Recommended PR title: Draft docs freshness proposal: packages/docs/src/content/d
 
 ## Why this PR exists
 
-The ADR-015 document is marked as real-stale with high semantic impact and high confidence due to multiple code files updated after the last documentation commit. The documentation is likely significantly outdated and requires a thorough review and update to match the latest code changes. This proposal does not mutate the source file but adds a human-readable advisory note for maintainers to prioritize this update.
+The document is marked as real-stale with high semantic impact and multiple code updates after the doc commit indicate significant potential outdatedness. This patch does not change the document content but flags the need for human review to update the documentation to reflect recent code changes as recommended by the Docs Librarian.
 
 ## Suggested PR body
 
 This draft PR should be opened only after a maintainer applies and validates the proposed documentation changes.
 
-# Advisory Note
-
-**Attention:** This ADR-015 documentation is currently considered significantly outdated (real-stale) with high semantic impact. Multiple related code files have been updated since the last documentation commit. Please thoroughly review and update this document to ensure it accurately reflects the latest codebase and tool behavior.
 
 ---
 
-*This note is for maintainers and does not alter the existing documentation content.*
+> **Note:** This document has been identified as potentially outdated due to multiple code updates after the last documentation commit. A human review is required to update the documentation to reflect recent code changes and ensure accuracy.
+
+---
+
 
 ## Suggested Docs Librarian comment
 
@@ -38,21 +38,21 @@ Human review required: `yes`
 
 ### Rationale
 
-The ADR-015 document is marked as real-stale with high semantic impact and high confidence due to multiple code files updated after the last documentation commit. The documentation is likely significantly outdated and requires a thorough review and update to match the latest code changes. This proposal does not mutate the source file but adds a human-readable advisory note for maintainers to prioritize this update.
+The document is marked as real-stale with high semantic impact and multiple code updates after the doc commit indicate significant potential outdatedness. This patch does not change the document content but flags the need for human review to update the documentation to reflect recent code changes as recommended by the Docs Librarian.
 
 ### Proposed changes
 
-- Add an advisory note at the top of the document to highlight the need for thorough review and update due to stale status and code changes.
+- Add a note at the end of the document to indicate that human review is required to update the documentation to reflect recent code changes.
 
 ### Patch proposal artifact
 
-# Advisory Note
-
-**Attention:** This ADR-015 documentation is currently considered significantly outdated (real-stale) with high semantic impact. Multiple related code files have been updated since the last documentation commit. Please thoroughly review and update this document to ensure it accurately reflects the latest codebase and tool behavior.
 
 ---
 
-*This note is for maintainers and does not alter the existing documentation content.*
+> **Note:** This document has been identified as potentially outdated due to multiple code updates after the last documentation commit. A human review is required to update the documentation to reflect recent code changes and ensure accuracy.
+
+---
+
 
 ## Maintainer checklist
 
