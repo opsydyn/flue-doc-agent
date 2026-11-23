@@ -10,21 +10,15 @@ Recommended PR title: Draft docs freshness proposal: packages/docs/src/content/d
 
 ## Why this PR exists
 
-The ADR-012 document is marked as real-stale with medium semantic impact and high confidence. The advisory recommends updating the documentation to reflect code changes and fixing dead links. This proposal does not modify the source content but adds a note to prompt human review to ensure accuracy and completeness before any updates.
+The document is marked as real-stale with medium semantic impact and multiple suggested fixes including updating to reflect latest code changes and fixing dead links. This proposal does not edit the source but adds a note recommending human review to ensure accuracy and completeness before any updates.
 
 ## Suggested PR body
 
 This draft PR should be opened only after a maintainer applies and validates the proposed documentation changes.
 
-# ⚠️ Human Review Required
+# Human Review Required
 
-This document (ADR-012: Freshness signals — GitHub Traffic API + One Dollar Stats) has been flagged as potentially outdated with medium semantic impact. It contains dead links and may not fully reflect recent code changes.
-
-**Action:** Please review and update the documentation to ensure accuracy and fix any dead links before relying on it for decision-making.
-
----
-
-*This note is added automatically by the Docs Librarian as a reminder to maintain documentation quality.*
+This document (ADR-012: Freshness signals — GitHub Traffic API + One Dollar Stats) has been flagged as real-stale with medium semantic impact. It requires a thorough human review to update content to reflect the latest code changes and to fix or remove dead links. Please verify all technical details and update accordingly to maintain documentation accuracy and reliability.
 
 ## Suggested Docs Librarian comment
 
@@ -40,23 +34,17 @@ Human review required: `yes`
 
 ### Rationale
 
-The ADR-012 document is marked as real-stale with medium semantic impact and high confidence. The advisory recommends updating the documentation to reflect code changes and fixing dead links. This proposal does not modify the source content but adds a note to prompt human review to ensure accuracy and completeness before any updates.
+The document is marked as real-stale with medium semantic impact and multiple suggested fixes including updating to reflect latest code changes and fixing dead links. This proposal does not edit the source but adds a note recommending human review to ensure accuracy and completeness before any updates.
 
 ### Proposed changes
 
-- Add a prominent note at the top of the document to indicate that human review is required due to possible outdated content and dead links.
+- Add a human review note in the document frontmatter or metadata to flag the need for manual verification and update.
 
 ### Patch proposal artifact
 
-# ⚠️ Human Review Required
+# Human Review Required
 
-This document (ADR-012: Freshness signals — GitHub Traffic API + One Dollar Stats) has been flagged as potentially outdated with medium semantic impact. It contains dead links and may not fully reflect recent code changes.
-
-**Action:** Please review and update the documentation to ensure accuracy and fix any dead links before relying on it for decision-making.
-
----
-
-*This note is added automatically by the Docs Librarian as a reminder to maintain documentation quality.*
+This document (ADR-012: Freshness signals — GitHub Traffic API + One Dollar Stats) has been flagged as real-stale with medium semantic impact. It requires a thorough human review to update content to reflect the latest code changes and to fix or remove dead links. Please verify all technical details and update accordingly to maintain documentation accuracy and reliability.
 
 ## Maintainer checklist
 
